@@ -5,6 +5,8 @@ use bevy::{
 };
 use bevy_rapier2d::prelude::*;
 use crate::input::MousePosition;
+use crate::random_number;
+use std::f32::consts::PI;
 
 // Constants
 const BOID_COLOR: Color = Color::rgb(0.3, 0.3, 0.3);
@@ -28,6 +30,9 @@ struct Steering(Vec2);
 #[derive(Component)]
 struct Seek;
 
+#[derive(Component)]
+struct Wander;
+
 // Plugin
 impl Plugin for BoidPlugin {
     fn build(&self, app: &mut App) {
@@ -35,6 +40,7 @@ impl Plugin for BoidPlugin {
             .add_event::<BoidSpawned>()
             .add_system(input_system)
             .add_system(seek_system.before(movement_system))
+            .add_system(wander_system.before(movement_system))
             .add_system(movement_system)
             .add_system(spawn_system);
     }
@@ -42,6 +48,18 @@ impl Plugin for BoidPlugin {
 
 
 // Systems
+fn wander_system(
+    mut query: Query<(&mut Steering, &Velocity), With<Wander>>
+) {
+    for (mut steering, velocity) in &mut query {
+        let circle_center = velocity.linvel.normalize_or_zero() * BOID_SPEED;
+        let rotation = Quat::from_rotation_z(random_number(-PI, PI));
+        let displacement = (Vec2::Y * BOID_SPEED).extend(0.);
+        let wandering_force = rotation.mul_vec3(displacement).truncate();
+        steering.0 = circle_center + wandering_force;
+    }
+}
+
 fn seek_system(
     mouse_position: Res<MousePosition>,
     mut query: Query<(&mut Steering, &Transform, &Velocity), With<Seek>>
@@ -109,7 +127,7 @@ fn spawn_system(
                 ..default()
             },
             Boid,
-            Seek,
+            Wander,
             Steering(Vec2::ZERO),
             RigidBody::Dynamic,
             Velocity { linvel: Vec2::ZERO, angvel: 0. },
