@@ -5,6 +5,8 @@ use bevy::{
 
 use crate::physics::PhysicsPlugin;
 use crate::camera::CameraPlugin;
+use crate::boids::BoidPlugin;
+use crate::input::InputPlugin;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
@@ -15,6 +17,8 @@ impl Plugin for GamePlugin {
         app
             .insert_resource(ClearColor(BACKGROUND_COLOR))
             .add_plugin(PhysicsPlugin)
-            .add_plugin(CameraPlugin);
+            .add_plugin(CameraPlugin)
+            .add_plugin(InputPlugin)
+            .add_plugin(BoidPlugin);
     }
 }

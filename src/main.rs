@@ -3,6 +3,8 @@ use bevy::prelude::*;
 mod debug;
 mod physics;
 mod camera;
+mod boids;
+mod input;
 mod game;
 
 use crate::debug::DebugPlugin;
