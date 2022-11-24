@@ -12,8 +12,9 @@ use std::f32::consts::PI;
 const BOID_COLOR: Color = Color::rgb(0.3, 0.3, 0.3);
 const BOID_SPEED: f32 = 200.;
 const BOID_SIZE: f32 = 10.;
-const BOID_STEERING_FORCE: f32 = 20.;
+const BOID_STEERING_FORCE: f32 = 50.;
 const BOID_SLOWING_RADIUS: f32 = 100.;
+const BOID_AVOIDANCE_FACTOR: f32 = 100.;
 
 pub struct BoidPlugin;
 
@@ -33,6 +34,9 @@ struct Seek;
 #[derive(Component)]
 struct Wander;
 
+#[derive(Component)]
+struct Avoid;
+
 // Plugin
 impl Plugin for BoidPlugin {
     fn build(&self, app: &mut App) {
@@ -41,8 +45,25 @@ impl Plugin for BoidPlugin {
             .add_system(input_system)
             .add_system(seek_system.before(movement_system))
             .add_system(wander_system.before(movement_system))
+            .add_system(avoidance_system.before(movement_system))
             .add_system(movement_system)
             .add_system(spawn_system);
+    }
+}
+
+fn avoidance_system(
+    mut query: Query<(&mut Steering, &Transform), With<Avoid>>
+) {
+    let mut iterable = query.iter_combinations_mut();
+    while let Some([
+        (mut steering, transform), 
+        (mut other_steering, other_transform)
+    ]) = iterable.fetch_next() {
+        let vector = other_transform.translation - transform.translation;
+        let distance_squared = vector.length_squared();
+        let avoidance_force = -vector.normalize().truncate() / distance_squared;
+        steering.0 += avoidance_force * BOID_AVOIDANCE_FACTOR;
+        other_steering.0 += -avoidance_force * BOID_AVOIDANCE_FACTOR;
     }
 }
 
@@ -53,10 +74,10 @@ fn wander_system(
 ) {
     for (mut steering, velocity) in &mut query {
         let circle_center = velocity.linvel.normalize_or_zero() * BOID_SPEED;
-        let rotation = Quat::from_rotation_z(random_number(-PI, PI));
+        let rotation = Quat::from_rotation_z(random_number(-PI * 2., PI * 2.));
         let displacement = (Vec2::Y * BOID_SPEED).extend(0.);
         let wandering_force = rotation.mul_vec3(displacement).truncate();
-        steering.0 = circle_center + wandering_force;
+        steering.0 = (circle_center + wandering_force).normalize();
     }
 }
 
@@ -64,7 +85,7 @@ fn seek_system(
     mouse_position: Res<MousePosition>,
     mut query: Query<(&mut Steering, &Transform, &Velocity), With<Seek>>
 ) {
-    for (mut steering, transform, velocity) in &mut query {
+    for (mut steering, transform, _velocity) in &mut query {
         let target = mouse_position.0;
         let position = transform.translation.truncate();
         let path_to_target = target - position;
@@ -73,12 +94,10 @@ fn seek_system(
         let mut desired_velocity = path_to_target.normalize_or_zero();
         if distance <= BOID_SLOWING_RADIUS {
             let arrival_force = distance / BOID_SLOWING_RADIUS;
-            desired_velocity = desired_velocity * BOID_SPEED * arrival_force;
-        } else {
-            desired_velocity = desired_velocity * BOID_SPEED;
+            desired_velocity = desired_velocity * arrival_force;
         }
 
-        steering.0 += desired_velocity - velocity.linvel;
+        steering.0 += desired_velocity;
     }
 }
 
@@ -87,7 +106,8 @@ fn movement_system(
     mut query: Query<(&mut Velocity, &mut Steering, &mut Transform), With<Boid>>
 ) {
     for (mut velocity, mut steering, mut transform) in &mut query {
-        velocity.linvel += steering.0.clamp_length_max(BOID_STEERING_FORCE);
+        let desired_velocity = (steering.0 * BOID_SPEED) - velocity.linvel;
+        velocity.linvel += desired_velocity;
         velocity.linvel = velocity.linvel.clamp_length_max(BOID_SPEED);
 
         let rotation_angle = -velocity.linvel.x.atan2(velocity.linvel.y);
@@ -127,11 +147,13 @@ fn spawn_system(
                 ..default()
             },
             Boid,
-            Wander,
+            Avoid,
+            Seek,
             Steering(Vec2::ZERO),
             RigidBody::Dynamic,
             Velocity { linvel: Vec2::ZERO, angvel: 0. },
-            Collider::ball(BOID_SIZE)
+            Collider::ball(BOID_SIZE),
+            GravityScale(0.)
         ));
     }
 }
