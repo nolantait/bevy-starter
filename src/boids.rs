@@ -4,17 +4,21 @@ use bevy::{
     sprite::MaterialMesh2dBundle,
 };
 use bevy_rapier2d::prelude::*;
-
-
 use crate::input::MousePosition;
 
+// Constants
 const BOID_COLOR: Color = Color::rgb(0.3, 0.3, 0.3);
 const BOID_SPEED: f32 = 200.;
 const BOID_SIZE: f32 = 10.;
+const BOID_STEERING_FORCE: f32 = 20.;
+const BOID_SLOWING_RADIUS: f32 = 100.;
 
 pub struct BoidPlugin;
+
+// Events
 struct BoidSpawned(Vec2);
 
+// Components
 #[derive(Component)]
 struct Boid;
 
@@ -24,6 +28,7 @@ struct Steering(Vec2);
 #[derive(Component)]
 struct Seek;
 
+// Plugin
 impl Plugin for BoidPlugin {
     fn build(&self, app: &mut App) {
         app
@@ -35,15 +40,27 @@ impl Plugin for BoidPlugin {
     }
 }
 
+
+// Systems
 fn seek_system(
     mouse_position: Res<MousePosition>,
-    mut query: Query<(&mut Steering, &Transform), With<Seek>>
+    mut query: Query<(&mut Steering, &Transform, &Velocity), With<Seek>>
 ) {
-    for (mut steering, transform) in &mut query {
+    for (mut steering, transform, velocity) in &mut query {
         let target = mouse_position.0;
         let position = transform.translation.truncate();
-        let desired = (target - position).normalize_or_zero() * BOID_SPEED;
-        steering.0 += desired;
+        let path_to_target = target - position;
+        let distance = path_to_target.length();
+
+        let mut desired_velocity = path_to_target.normalize_or_zero();
+        if distance <= BOID_SLOWING_RADIUS {
+            let arrival_force = distance / BOID_SLOWING_RADIUS;
+            desired_velocity = desired_velocity * BOID_SPEED * arrival_force;
+        } else {
+            desired_velocity = desired_velocity * BOID_SPEED;
+        }
+
+        steering.0 += desired_velocity - velocity.linvel;
     }
 }
 
@@ -52,12 +69,13 @@ fn movement_system(
     mut query: Query<(&mut Velocity, &mut Steering, &mut Transform), With<Boid>>
 ) {
     for (mut velocity, mut steering, mut transform) in &mut query {
-        let movement = steering.0;
-        let rotation_angle = -movement.x.atan2(movement.y);
+        velocity.linvel += steering.0.clamp_length_max(BOID_STEERING_FORCE);
+        velocity.linvel = velocity.linvel.clamp_length_max(BOID_SPEED);
+
+        let rotation_angle = -velocity.linvel.x.atan2(velocity.linvel.y);
         transform.rotation = Quat::from_rotation_z(rotation_angle);
 
-        velocity.linvel += movement;
-        velocity.linvel = velocity.linvel.clamp_length_max(BOID_SPEED);
+        // Reset steering force for next tick
         steering.0 = Vec2::ZERO;
     }
 }
@@ -82,8 +100,6 @@ fn spawn_system(
 ) {
     for spawn_event in events.iter() {
         let position = spawn_event.0;
-
-        eprintln!("Spawning boid at {}", position);
 
         commands.spawn((
             MaterialMesh2dBundle {
