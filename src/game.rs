@@ -8,7 +8,7 @@ use crate::camera::CameraPlugin;
 use crate::boids::BoidPlugin;
 use crate::input::InputPlugin;
 
-const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
+const BACKGROUND_COLOR: Color = Color::rgb(0.2, 0.2, 0.25);
 
 pub struct GamePlugin;
 
