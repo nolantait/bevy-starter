@@ -179,11 +179,11 @@ fn input_avoidance_system(
 }
 
 fn input_spawn_system(
-    buttons: Res<Input<MouseButton>>,
+    keys: Res<Input<KeyCode>>,
     mouse_position: Res<MousePosition>,
     mut events: EventWriter<BoidSpawned>
 ) {
-    if buttons.just_pressed(MouseButton::Left) {
+    if keys.just_pressed(KeyCode::Space) {
         let spawn_event = BoidSpawned(mouse_position.0);
         events.send(spawn_event);
     }
@@ -250,7 +250,6 @@ fn spawn_system(
             Boid,
             Avoid,
             Seek,
-            Wander,
             Steering(Vec2::ZERO),
             RigidBody::Dynamic,
             Velocity { linvel: Vec2::ZERO, angvel: 0. },
