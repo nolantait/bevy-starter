@@ -13,8 +13,6 @@ impl Plugin for GamePlugin {
             .add_plugin(PhysicsPlugin)
             .add_plugin(CameraPlugin)
             .add_plugin(InputPlugin)
-            .add_plugin(BoidPlugin)
-            .add_plugin(BulletsPlugin)
             .add_startup_system(init_level);
     }
 }

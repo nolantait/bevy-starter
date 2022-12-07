@@ -3,9 +3,7 @@ use bevy::prelude::*;
 mod debug;
 mod physics;
 mod camera;
-mod boids;
 mod input;
-mod bullets;
 mod game;
 mod utils;
 
@@ -13,9 +11,7 @@ mod prelude {
     pub use crate::debug::*;
     pub use crate::physics::*;
     pub use crate::camera::*;
-    pub use crate::boids::*;
     pub use crate::input::*;
-    pub use crate::bullets::*;
     pub use crate::game::*;
     pub use crate::utils::*;
     pub use bevy::prelude::*;
