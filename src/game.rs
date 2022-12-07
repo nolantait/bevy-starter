@@ -1,15 +1,5 @@
-use bevy::{
-    app::App,
-    prelude::*,
-    sprite::MaterialMesh2dBundle,
-};
-use bevy_rapier2d::prelude::*;
-
-use crate::physics::PhysicsPlugin;
-use crate::camera::CameraPlugin;
-use crate::boids::BoidPlugin;
-use crate::input::InputPlugin;
-
+use crate::prelude::*;
+use bevy::sprite::MaterialMesh2dBundle;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.2, 0.2, 0.25);
 const LEVEL_COLOR: Color = Color::rgb(0.4, 0.4, 0.5);
@@ -24,6 +14,7 @@ impl Plugin for GamePlugin {
             .add_plugin(CameraPlugin)
             .add_plugin(InputPlugin)
             .add_plugin(BoidPlugin)
+            .add_plugin(BulletsPlugin)
             .add_startup_system(init_level);
     }
 }

@@ -1,8 +1,4 @@
-use bevy::{
-    app::App,
-    prelude::{Component, Plugin, Commands, Camera2dBundle},
-};
-
+use crate::prelude::*;
 
 #[derive(Component)]
 pub struct MainCamera;

@@ -1,9 +1,5 @@
-use bevy::{
-    app::App,
-    prelude::*,
-    render::camera::RenderTarget,
-};
-
+use crate::prelude::*;
+use bevy::render::camera::RenderTarget;
 use crate::camera::MainCamera;
 
 #[derive(Resource)]

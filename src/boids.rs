@@ -1,33 +1,28 @@
+use crate::prelude::*;
 use bevy::{
-    app::App,
-    prelude::*,
     sprite::MaterialMesh2dBundle,
     input::mouse::MouseWheel
 };
-use bevy_rapier2d::prelude::*;
-use crate::input::MousePosition;
-use crate::random_number;
 use std::f32::consts::PI;
 
 // Constants
+pub const BOID_SIZE: f32 = 10.;
 const BOID_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 const BOID_SPEED: f32 = 250.;
-const BOID_SIZE: f32 = 10.;
 const BOID_STEERING_FORCE: f32 = 0.75;
 const BOID_SLOWING_RADIUS: f32 = 100.;
 const BOID_AVOIDANCE_FACTOR: f32 = 100.;
 const MAX_AVOIDANCE: f32 = 10000.;
 
-pub struct BoidPlugin;
-
-enum Stance {
+pub enum Stance {
     Follow,
     Evade
 }
 
 // Events
-struct BoidSpawned(Vec2);
-struct StanceChanged(Stance);
+pub struct BoidSpawned(Vec2);
+pub struct StanceChanged(Stance);
+pub struct Shoot;
 
 // Resources
 #[derive(Resource)]
@@ -38,7 +33,7 @@ struct AvoidanceFactor(f32);
 
 // Components
 #[derive(Component)]
-struct Boid;
+pub struct Boid;
 
 #[derive(Component)]
 struct Steering(Vec2);
@@ -55,8 +50,34 @@ struct Avoid;
 #[derive(Component)]
 struct Flee;
 
+// Bundles
+#[derive(Bundle)]
+struct BoidBundle {
+    _boid: Boid,
+    steering: Steering,
+    physics: RigidBody,
+    velocity: Velocity,
+    collider: Collider,
+    gravity: GravityScale,
+}
+
+impl Default for BoidBundle {
+    fn default() -> Self {
+        BoidBundle {
+            _boid: Boid,
+            steering: Steering(Vec2::ZERO),
+            physics: RigidBody::Dynamic,
+            velocity: Velocity { linvel: Vec2::ZERO, angvel: 0. },
+            collider: Collider::ball(BOID_SIZE),
+            gravity: GravityScale(0.)
+        }
+    }
+}
+
 
 // Plugin
+pub struct BoidPlugin;
+
 impl Plugin for BoidPlugin {
     fn build(&self, app: &mut App) {
         app
@@ -64,6 +85,7 @@ impl Plugin for BoidPlugin {
             .insert_resource(AvoidanceFactor(BOID_AVOIDANCE_FACTOR))
             .add_event::<BoidSpawned>()
             .add_event::<StanceChanged>()
+            .add_event::<Shoot>()
             .add_system(seek_system.before(movement_system))
             .add_system(wander_system.before(movement_system))
             .add_system(flee_system.before(movement_system))
@@ -73,10 +95,14 @@ impl Plugin for BoidPlugin {
             .add_system(input_stance_system)
             .add_system(input_avoidance_system)
             .add_system(behaviour_system)
-            .add_system(spawn_system);
+            .add_system(spawn_system)
+            .add_system(input_shooting_system);
     }
 }
 
+
+
+// Systems
 fn avoidance_system(
     mut query: Query<(&mut Steering, &Transform), With<Avoid>>,
     avoidance_factor: Res<AvoidanceFactor>
@@ -95,19 +121,16 @@ fn avoidance_system(
     }
 }
 
-
-// Systems
 fn wander_system(
     mut query: Query<(&mut Steering, &Velocity), With<Wander>>
 ) {
     for (mut steering, velocity) in &mut query {
-        let circle_center = velocity.linvel.clone().normalize_or_zero() * BOID_SPEED;
-        let random = random_number(-PI * 2., PI * 2.);
-        let rotation = Quat::from_rotation_z(random);
-        let displacement = Vec3::Y * (BOID_SPEED / 4.);
-        let wandering_force = rotation.mul_vec3(displacement).truncate();
+        let random = random_number(-PI / 12., PI / 12.);
+        let random_rotation = Quat::from_rotation_z(random);
+        let transform = Transform::from_xyz(velocity.linvel.x, velocity.linvel.y, 0.)
+                                  .with_rotation(random_rotation);
 
-        steering.0 += (circle_center + wandering_force).normalize();
+        steering.0 += transform.rotation.mul_vec3(transform.translation).truncate().normalize_or_zero();
     }
 }
 
@@ -189,6 +212,16 @@ fn input_spawn_system(
     }
 }
 
+fn input_shooting_system(
+    keys: Res<Input<MouseButton>>,
+    mut events: EventWriter<Shoot>
+) {
+    if keys.just_pressed(MouseButton::Left) {
+        let shoot_event = Shoot;
+        events.send(shoot_event);
+    }
+}
+
 fn input_stance_system(
     buttons: Res<Input<MouseButton>>,
     mut events: EventWriter<StanceChanged>,
@@ -230,7 +263,6 @@ fn behaviour_system(
     }
 }
 
-
 fn spawn_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -241,20 +273,16 @@ fn spawn_system(
         let position = spawn_event.0;
 
         commands.spawn((
+            BoidBundle::default(),
             MaterialMesh2dBundle {
                 mesh: meshes.add(shape::RegularPolygon::new(BOID_SIZE, 3).into()).into(),
                 material: materials.add(ColorMaterial::from(BOID_COLOR)),
                 transform: Transform::from_xyz(position.x, position.y, 0.),
                 ..default()
             },
-            Boid,
             Avoid,
-            Seek,
-            Steering(Vec2::ZERO),
-            RigidBody::Dynamic,
-            Velocity { linvel: Vec2::ZERO, angvel: 0. },
-            Collider::ball(BOID_SIZE),
-            GravityScale(0.)
+            Wander
         ));
     }
 }
+

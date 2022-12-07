@@ -1,15 +1,29 @@
 use bevy::prelude::*;
-use rand::Rng;
 
 mod debug;
 mod physics;
 mod camera;
 mod boids;
 mod input;
+mod bullets;
 mod game;
+mod utils;
 
-use crate::debug::DebugPlugin;
-use crate::game::GamePlugin;
+mod prelude {
+    pub use crate::debug::*;
+    pub use crate::physics::*;
+    pub use crate::camera::*;
+    pub use crate::boids::*;
+    pub use crate::input::*;
+    pub use crate::bullets::*;
+    pub use crate::game::*;
+    pub use crate::utils::*;
+    pub use bevy::prelude::*;
+    pub use bevy_rapier2d::prelude::*;
+}
+
+use crate::prelude::*;
+
 
 fn main() {
     App::new()
@@ -20,7 +34,4 @@ fn main() {
         .run();
 }
 
-pub fn random_number(min: f32, max: f32) -> f32 {
-    let mut rng = rand::thread_rng();
-    return rng.gen_range(min..max);
-}
+
