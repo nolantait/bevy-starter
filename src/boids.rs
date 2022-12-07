@@ -1,8 +1,5 @@
 use crate::prelude::*;
-use bevy::{
-    sprite::MaterialMesh2dBundle,
-    input::mouse::MouseWheel
-};
+use bevy::sprite::MaterialMesh2dBundle;
 use std::f32::consts::PI;
 
 // Constants
@@ -12,7 +9,7 @@ const BOID_SPEED: f32 = 250.;
 const BOID_STEERING_FORCE: f32 = 0.75;
 const BOID_SLOWING_RADIUS: f32 = 100.;
 const BOID_AVOIDANCE_FACTOR: f32 = 100.;
-const MAX_AVOIDANCE: f32 = 10000.;
+pub const MAX_AVOIDANCE: f32 = 10000.;
 
 pub enum Stance {
     Follow,
@@ -20,16 +17,20 @@ pub enum Stance {
 }
 
 // Events
-pub struct BoidSpawned(Vec2);
-pub struct StanceChanged(Stance);
+pub struct BoidSpawned(pub Vec2);
+pub struct StanceChanged(pub Stance);
 pub struct Shoot;
+pub struct BoidShot {
+    pub boid: Entity,
+    pub bullet: Entity
+}
 
 // Resources
 #[derive(Resource)]
-struct PlayerStance(Stance);
+pub struct PlayerStance(pub Stance);
 
 #[derive(Resource)]
-struct AvoidanceFactor(f32);
+pub struct AvoidanceFactor(pub f32);
 
 // Components
 #[derive(Component)]
@@ -86,17 +87,14 @@ impl Plugin for BoidPlugin {
             .add_event::<BoidSpawned>()
             .add_event::<StanceChanged>()
             .add_event::<Shoot>()
+            .add_event::<BoidShot>()
             .add_system(seek_system.before(movement_system))
             .add_system(wander_system.before(movement_system))
             .add_system(flee_system.before(movement_system))
             .add_system(avoidance_system.before(movement_system))
             .add_system(movement_system)
-            .add_system(input_spawn_system)
-            .add_system(input_stance_system)
-            .add_system(input_avoidance_system)
             .add_system(behaviour_system)
-            .add_system(spawn_system)
-            .add_system(input_shooting_system);
+            .add_system(spawn_system);
     }
 }
 
@@ -125,8 +123,8 @@ fn wander_system(
     mut query: Query<(&mut Steering, &Velocity), With<Wander>>
 ) {
     for (mut steering, velocity) in &mut query {
-        let random = random_number(-PI / 12., PI / 12.);
-        let random_rotation = Quat::from_rotation_z(random);
+        let random_angle = random_number(-PI / 12., PI / 12.);
+        let random_rotation = Quat::from_rotation_z(random_angle);
         let transform = Transform::from_xyz(velocity.linvel.x, velocity.linvel.y, 0.)
                                   .with_rotation(random_rotation);
 
@@ -191,49 +189,6 @@ fn movement_system(
     }
 }
 
-fn input_avoidance_system(
-    mut events: EventReader<MouseWheel>,
-    mut avoidance_factor: ResMut<AvoidanceFactor>
-) {
-    for event in events.iter() {
-        avoidance_factor.0 += event.y * 100.;
-        avoidance_factor.0 = avoidance_factor.0.clamp(0., MAX_AVOIDANCE);
-    }
-}
-
-fn input_spawn_system(
-    keys: Res<Input<KeyCode>>,
-    mouse_position: Res<MousePosition>,
-    mut events: EventWriter<BoidSpawned>
-) {
-    if keys.just_pressed(KeyCode::Space) {
-        let spawn_event = BoidSpawned(mouse_position.0);
-        events.send(spawn_event);
-    }
-}
-
-fn input_shooting_system(
-    keys: Res<Input<MouseButton>>,
-    mut events: EventWriter<Shoot>
-) {
-    if keys.just_pressed(MouseButton::Left) {
-        let shoot_event = Shoot;
-        events.send(shoot_event);
-    }
-}
-
-fn input_stance_system(
-    buttons: Res<Input<MouseButton>>,
-    mut events: EventWriter<StanceChanged>,
-    stance: Res<PlayerStance>
-) {
-    if buttons.just_pressed(MouseButton::Right) {
-        match stance.0 {
-            Stance::Follow => events.send(StanceChanged(Stance::Evade)),
-            Stance::Evade => events.send(StanceChanged(Stance::Follow))
-        }
-    }
-}
 
 
 fn behaviour_system(

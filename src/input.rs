@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use bevy::render::camera::RenderTarget;
+use bevy::input::mouse::MouseWheel;
 use crate::camera::MainCamera;
 
 #[derive(Resource)]
@@ -11,7 +12,11 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app
             .insert_resource(MousePosition(Vec2::default()))
-            .add_system(cursor_system);
+            .add_system(cursor_system)
+            .add_system(input_avoidance_system)
+            .add_system(input_spawn_system)
+            .add_system(input_shooting_system)
+            .add_system(input_stance_system);
     }
 }
 
@@ -43,3 +48,48 @@ fn cursor_system(
         commands.insert_resource(MousePosition(world_position));
     }
 }
+
+fn input_avoidance_system(
+    mut events: EventReader<MouseWheel>,
+    mut avoidance_factor: ResMut<AvoidanceFactor>
+) {
+    for event in events.iter() {
+        avoidance_factor.0 += event.y * 100.;
+        avoidance_factor.0 = avoidance_factor.0.clamp(0., MAX_AVOIDANCE);
+    }
+}
+
+fn input_spawn_system(
+    keys: Res<Input<KeyCode>>,
+    mouse_position: Res<MousePosition>,
+    mut events: EventWriter<BoidSpawned>
+) {
+    if keys.just_pressed(KeyCode::Space) {
+        let spawn_event = BoidSpawned(mouse_position.0);
+        events.send(spawn_event);
+    }
+}
+
+fn input_shooting_system(
+    keys: Res<Input<MouseButton>>,
+    mut events: EventWriter<Shoot>
+) {
+    if keys.just_pressed(MouseButton::Left) {
+        let shoot_event = Shoot;
+        events.send(shoot_event);
+    }
+}
+
+fn input_stance_system(
+    buttons: Res<Input<MouseButton>>,
+    mut events: EventWriter<StanceChanged>,
+    stance: Res<PlayerStance>
+) {
+    if buttons.just_pressed(MouseButton::Right) {
+        match stance.0 {
+            Stance::Follow => events.send(StanceChanged(Stance::Evade)),
+            Stance::Evade => events.send(StanceChanged(Stance::Follow))
+        }
+    }
+}
+
