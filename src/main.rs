@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 mod debug;
 mod physics;
@@ -7,27 +8,21 @@ mod input;
 mod game;
 mod utils;
 
-mod prelude {
-    pub use crate::debug::*;
-    pub use crate::physics::*;
-    pub use crate::camera::*;
-    pub use crate::input::*;
-    pub use crate::game::*;
-    pub use crate::utils::*;
-    pub use bevy::prelude::*;
-    pub use bevy_rapier2d::prelude::*;
-}
+use debug::DebugPlugin;
+use game::GamePlugin;
+use physics::PhysicsPlugin;
+use camera::CameraPlugin;
 
-use crate::prelude::*;
-
+const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_plugins(DefaultPlugins)
         .add_plugin(DebugPlugin)
         .add_plugin(GamePlugin)
+        .add_plugin(PhysicsPlugin)
+        .add_plugin(CameraPlugin)
         .add_system(bevy::window::close_on_esc)
         .run();
 }
-
-
