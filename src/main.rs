@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
 
 mod debug;
 mod physics;
@@ -13,12 +12,21 @@ use game::GamePlugin;
 use physics::PhysicsPlugin;
 use camera::CameraPlugin;
 
-const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
+const BACKGROUND_COLOR: Color = Color::rgb(0.4, 0.4, 0.4);
 
 fn main() {
     App::new()
+        .insert_resource(Msaa::Off)
         .insert_resource(ClearColor(BACKGROUND_COLOR))
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "Bevy game".to_string(), // ToDo
+                resolution: (800., 600.).into(),
+                canvas: Some("#bevy".to_owned()),
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugin(DebugPlugin)
         .add_plugin(GamePlugin)
         .add_plugin(PhysicsPlugin)

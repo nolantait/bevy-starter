@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use super::*;
+use bevy_rapier2d::prelude::*;
 
 pub struct PhysicsPlugin;
 
