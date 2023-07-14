@@ -27,10 +27,11 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugin(DebugPlugin)
-        .add_plugin(GamePlugin)
-        .add_plugin(PhysicsPlugin)
-        .add_plugin(CameraPlugin)
-        .add_system(bevy::window::close_on_esc)
+        .add_plugins((
+            DebugPlugin,
+            GamePlugin,
+            CameraPlugin,
+        ))
+        .add_systems(Update, bevy::window::close_on_esc)
         .run();
 }
