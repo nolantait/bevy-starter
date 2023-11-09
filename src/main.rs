@@ -31,6 +31,7 @@ fn main() {
             DebugPlugin,
             GamePlugin,
             CameraPlugin,
+            PhysicsPlugin
         ))
         .add_systems(Update, bevy::window::close_on_esc)
         .run();
