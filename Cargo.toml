@@ -1,18 +1,19 @@
 [package]
-name = "pong"
+name = "starter"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.13"
+bevy = "0.14"
+# avian2d = "0.1.2"
 rand = "0.8.5"
 
 # Enable a small amount of optimization in debug mode
-[profile.dev]
-opt-level = 1
+# [profile.dev]
+# opt-level = 1
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
-[profile.dev.package."*"]
-opt-level = 3
+# [profile.dev.package."*"]
+# opt-level = 3
