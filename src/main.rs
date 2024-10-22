@@ -10,7 +10,7 @@ mod utils;
 use camera::CameraPlugin;
 use debug::DebugPlugin;
 use game::GamePlugin;
-// use physics::PhysicsPlugin;
+use physics::PhysicsPlugin;
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 
@@ -27,6 +27,6 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins((DebugPlugin, GamePlugin, CameraPlugin))
+        .add_plugins((DebugPlugin, GamePlugin, CameraPlugin, PhysicsPlugin))
         .run();
 }

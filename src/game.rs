@@ -1,16 +1,10 @@
+use avian2d::{math::*, prelude::*};
 use bevy::{app::App, prelude::*, sprite::MaterialMesh2dBundle};
 
 pub struct GamePlugin;
 
 #[derive(Component)]
 struct Boid;
-
-#[derive(Component)]
-struct Velocity {
-  linvel: Vec2,
-  angvel: Vec2,
-}
-
 
 const BOID_SIZE: f32 = 5.;
 
@@ -19,19 +13,21 @@ fn spawn_boid(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let shape = Mesh::from(Circle::new(BOID_SIZE));
+    let triangle = Triangle2d::new(
+        Vec2::new(0.0, BOID_SIZE),
+        Vec2::new(-BOID_SIZE, -BOID_SIZE),
+        Vec2::new(BOID_SIZE, -BOID_SIZE),
+    );
+
     let color = ColorMaterial::from(Color::srgb(1., 0., 0.));
 
-    let mesh_handle = meshes.add(shape);
+    let mesh_handle = meshes.add(triangle);
     let material_handle = materials.add(color);
 
     commands.spawn((
         Boid,
-        // RigidBody::Dynamic,
-        // Velocity {
-        //     linvel: Vec2::new(0., 5.0),
-        //     angvel: 0.4,
-        // },
+        RigidBody::Dynamic,
+        LinearVelocity::default(),
         MaterialMesh2dBundle {
             mesh: mesh_handle.into(),
             material: material_handle,
@@ -41,10 +37,9 @@ fn spawn_boid(
     ));
 }
 
-fn move_boid(mut query: Query<&mut Velocity, With<Boid>>) {
+fn move_boid(mut query: Query<&mut LinearVelocity, With<Boid>>) {
     for mut velocity in &mut query {
-        velocity.linvel += 1.5;
-        velocity.angvel += 99.5;
+        velocity.x += 0.05;
     }
 }
 
