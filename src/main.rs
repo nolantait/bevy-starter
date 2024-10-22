@@ -1,18 +1,18 @@
 use bevy::prelude::*;
 
-mod debug;
-mod physics;
 mod camera;
-mod input;
+mod debug;
 mod game;
+mod input;
+mod physics;
 mod utils;
 
+use camera::CameraPlugin;
 use debug::DebugPlugin;
 use game::GamePlugin;
-use physics::PhysicsPlugin;
-use camera::CameraPlugin;
+// use physics::PhysicsPlugin;
 
-const BACKGROUND_COLOR: Color = Color::rgb(0.4, 0.4, 0.4);
+const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 
 fn main() {
     App::new()
@@ -27,12 +27,6 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins((
-            DebugPlugin,
-            GamePlugin,
-            CameraPlugin,
-            PhysicsPlugin
-        ))
-        .add_systems(Update, bevy::window::close_on_esc)
+        .add_plugins((DebugPlugin, GamePlugin, CameraPlugin))
         .run();
 }

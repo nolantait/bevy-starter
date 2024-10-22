@@ -11,11 +11,6 @@ impl Plugin for CameraPlugin {
     }
 }
 
-fn initialize_camera(
-    mut commands: Commands,
-) {
-    commands.spawn((
-        Camera2dBundle::default(),
-        MainCamera
-    ));
+fn initialize_camera(mut commands: Commands) {
+    commands.spawn((Camera2dBundle::default(), MainCamera));
 }
