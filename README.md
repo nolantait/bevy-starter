@@ -1,6 +1,10 @@
 # Bevy Starter
 
-This repo is a minimal starter for Bevy 0.10.1
+This repo is a minimal starter for Bevy `0.14.2`
+
+## Inspiration
+
+- [`bevy_space`](https://github.com/perlindgren/bevy-space)
 
 ## Features
 

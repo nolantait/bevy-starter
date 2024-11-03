@@ -6,7 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.14"
+bevy = { version = "0.14.2", features = ["dynamic_linking"] }
+log = { version = "*", features = ["max_level_debug", "release_max_level_error"] }
 avian2d = "0.1"
 rand = "0.8.5"
 

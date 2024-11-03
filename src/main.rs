@@ -1,16 +1,11 @@
 use bevy::prelude::*;
 
-mod camera;
-mod debug;
-mod game;
-mod input;
-mod physics;
-mod utils;
-
-use camera::CameraPlugin;
-use debug::DebugPlugin;
-use game::GamePlugin;
-use physics::PhysicsPlugin;
+use starter::{
+  camera::CameraPlugin,
+  debug::DebugPlugin,
+  game::GamePlugin,
+  physics::PhysicsPlugin
+};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 
@@ -20,9 +15,11 @@ fn main() {
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                title: "Bevy game".to_string(), // ToDo
+                title: "Bevy game".into(),
+                resizable: false,
                 resolution: (800., 600.).into(),
                 canvas: Some("#bevy".to_owned()),
+                desired_maximum_frame_latency: core::num::NonZero::new(1u32),
                 ..default()
             }),
             ..default()

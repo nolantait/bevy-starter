@@ -1,4 +1,4 @@
-use super::*;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct MainCamera;

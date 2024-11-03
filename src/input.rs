@@ -1,7 +1,8 @@
-use super::*;
+#![allow(unused)]
+use bevy::prelude::*;
 
 #[derive(Resource)]
-pub struct MousePosition(pub Vec2);
+pub struct MousePosition(Vec2);
 
 pub struct InputPlugin;
 
