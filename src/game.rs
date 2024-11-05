@@ -82,10 +82,8 @@ fn move_boid(mut query: Query<(&mut LinearVelocity, &Boid)>) {
     }
 }
 
-impl Plugin for GamePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_boid)
-            .add_systems(Update, wander_boid)
-            .add_systems(Update, move_boid);
-    }
+pub(super) fn plugin(app: &mut App) {
+    app.add_systems(Startup, spawn_boid)
+        .add_systems(Update, wander_boid)
+        .add_systems(Update, move_boid);
 }
