@@ -1,11 +1,6 @@
 use bevy::prelude::*;
 
-use starter::{
-  camera::CameraPlugin,
-  debug::DebugPlugin,
-  game::GamePlugin,
-  physics::PhysicsPlugin
-};
+use starter::{camera::CameraPlugin, debug::DebugPlugin, game::GamePlugin, physics::PhysicsPlugin};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 

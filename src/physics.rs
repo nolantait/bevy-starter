@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use avian2d::{math::*, prelude::*};
+use bevy::prelude::*;
 
 pub struct PhysicsPlugin;
 
