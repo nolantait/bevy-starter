@@ -5,6 +5,7 @@ This repo is a minimal starter for Bevy `0.14.2`
 ## Inspiration
 
 - [`bevy_space`](https://github.com/perlindgren/bevy-space)
+- [`bevy_new_2d`](https://github.com/TheBevyFlock/bevy_new_2d)
 
 ## Features
 
