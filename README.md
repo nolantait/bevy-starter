@@ -9,8 +9,8 @@ This repo is a minimal starter for Bevy `0.14.2`
 ## Features
 
 - Cargo configured according to Bevy guide with build optimizations
-- Rapier physics implemented in a plugin
-- Generic set of starting plugins centered around GamePlugin
+- [Avian](https://github.com/Jondolf/avian) physics
+- Generic set of starting plugins with your games logic inside `GamePlugin`
 
 ## Missing
 
