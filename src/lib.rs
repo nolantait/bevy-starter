@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
-pub mod camera;
-pub mod debug;
-pub mod dev_tools;
-pub mod game;
-pub mod input;
-pub mod physics;
-pub mod utils;
-pub mod window;
+mod camera;
+mod debug;
+mod dev_tools;
+mod game;
+mod input;
+mod physics;
+mod utils;
+mod window;
 
 pub struct AppPlugin;
 
