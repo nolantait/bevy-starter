@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.14.2"
-avian2d = "0.1"
+bevy = "0.15"
+avian2d = { git = "https://github.com/Jondolf/avian", branch = "main" }
 rand = "0.8"
 log = { version = "*", features = ["max_level_debug", "release_max_level_error"] }
 # Compile low-severity logs out of web builds for performance.
