@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 #[derive(Component)]
+#[require(Camera2d)]
 pub struct MainCamera;
 
 pub(super) fn plugin(app: &mut App) {
@@ -8,5 +9,5 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn initialize_camera(mut commands: Commands) {
-    commands.spawn((Camera2dBundle::default(), MainCamera));
+    commands.spawn(MainCamera);
 }
