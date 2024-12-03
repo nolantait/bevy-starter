@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use avian2d::{math::*, prelude::*};
-use bevy::{app::App, prelude::*, sprite::MaterialMesh2dBundle};
+use bevy::{app::App, prelude::*};
 
 use crate::utils::random_number;
 
@@ -60,12 +60,8 @@ fn spawn_boid(
         },
         RigidBody::Dynamic,
         LinearVelocity::default(),
-        MaterialMesh2dBundle {
-            mesh: mesh.into(),
-            material,
-            transform: Transform::default(),
-            ..default()
-        },
+        Mesh2d(mesh),
+        MeshMaterial2d(material)
     ));
 }
 
