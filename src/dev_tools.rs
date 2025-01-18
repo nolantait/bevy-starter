@@ -7,12 +7,11 @@ use bevy::{
 };
 
 pub(crate) fn plugin(app: &mut App) {
+    let toggle_system = toggle_debug_ui.run_if(input_just_pressed(TOGGLE_KEY));
+
     // Toggle the debug overlay for UI.
     app.add_plugins(DebugUiPlugin);
-    app.add_systems(
-        Update,
-        toggle_debug_ui.run_if(input_just_pressed(TOGGLE_KEY)),
-    );
+    app.add_systems(Update, toggle_system);
 }
 
 const TOGGLE_KEY: KeyCode = KeyCode::Backquote;
