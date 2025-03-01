@@ -1,10 +1,9 @@
 #![allow(unused)]
 
+use avian2d::{math::*, prelude::*};
 use bevy::{app::App, prelude::*};
 
 use crate::utils::random_number;
-
-mod map;
 
 // This is an example of the most simple plugin you can write, without
 // having to implement any traits.

@@ -8,7 +8,6 @@ mod input;
 mod physics;
 mod utils;
 mod window;
-mod pathfinding;
 
 pub struct AppPlugin;
 
@@ -18,7 +17,6 @@ impl Plugin for AppPlugin {
             window::plugin,
             camera::plugin,
             physics::plugin,
-            pathfinding::plugin,
             input::plugin,
             game::plugin,
         ));

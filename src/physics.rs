@@ -1,31 +1,10 @@
+use avian2d::{math::*, prelude::*};
 use bevy::prelude::*;
 
-#[derive(Component, Default)]
-pub struct Position(Vec2);
-
-impl Position {
-    fn new(x: f32, y: f32) -> Self {
-        Position(Vec2::new(x, y))
-    }
-
-    fn lerp(&mut self, target: Vec2, alpha: f32) {
-        self.0 = self.0.lerp(target, alpha);
-    }
-}
-
-#[derive(Component)]
-struct TargetPosition(Vec2);
-
-fn move_towards_target_position(
-    mut query: Query<(&mut Position, &TargetPosition)>,
-    time: Res<Time>,
-) {
-    for (mut position, target_position) in query.iter_mut() {
-        let alpha = 0.1 * time.delta_secs();
-        position.lerp(target_position.0, alpha);
-    }
-}
-
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, move_towards_target_position);
+    // Add physics plugins and specify a units-per-meter scaling factor, 1 meter = 20 pixels. The
+    // unit allows the engine to tune its parameters for the scale of the world, improving
+    // stability.
+    app.add_plugins(PhysicsPlugins::default().with_length_unit(20.0))
+        .insert_resource(Gravity(Vector::NEG_Y * 1000.0));
 }
