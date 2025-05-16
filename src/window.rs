@@ -9,6 +9,7 @@ pub(super) fn plugin(app: &mut App) {
         resolution: (800., 600.).into(),
         canvas: Some("#bevy".to_owned()),
         desired_maximum_frame_latency: core::num::NonZero::new(1u32),
+        fit_canvas_to_parent: true,
         ..default()
     };
 
