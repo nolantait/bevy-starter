@@ -7,14 +7,14 @@ mod game;
 mod input;
 mod physics;
 mod utils;
-mod window;
+mod default;
 
 pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            window::plugin,
+            default::plugin,
             camera::plugin,
             physics::plugin,
             input::plugin,
