@@ -1,7 +1,7 @@
 //! Development tools for the game. This plugin is only enabled in dev builds.
 
 use bevy::{
-    input::common_conditions::input_just_pressed, 
+    input::common_conditions::input_just_pressed,
     prelude::*
 };
 
