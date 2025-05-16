@@ -34,6 +34,15 @@ dev_native = [
   "bevy/embedded_watcher",
 ]
 
+[lints.clippy]
+# Bevy supplies arguments to systems via dependency injection, so it's natural for systems to
+# request more than 7 arguments, which would undesirably trigger this lint.
+too_many_arguments = "allow"
+# Queries may access many components, which would undesirably trigger this lint.
+type_complexity = "allow"
+# Make sure macros use their standard braces, such as `[]` for `bevy_ecs::children!`.
+nonstandard_macro_braces = "warn"
+
 # Enable a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1
