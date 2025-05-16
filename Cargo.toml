@@ -2,11 +2,13 @@
 name = "starter"
 version = "0.1.0"
 edition = "2024"
+license = "LICENSE.txt"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.16"
+bevy = { version = "0.16", features = ["wayland"] }
 avian2d = { git = "https://github.com/Jondolf/avian", branch = "main" }
 rand = "0.8"
 log = { version = "*", features = ["max_level_debug", "release_max_level_error"] }
