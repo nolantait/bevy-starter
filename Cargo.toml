@@ -10,7 +10,7 @@ publish = false
 [dependencies]
 bevy = { version = "0.16", features = ["wayland"] }
 avian2d = { git = "https://github.com/Jondolf/avian", branch = "main" }
-rand = "0.8"
+rand = "0.9.1"
 log = { version = "*", features = ["max_level_debug", "release_max_level_error"] }
 # Compile low-severity logs out of web builds for performance.
 tracing = { version = "0.1", features = ["max_level_debug", "release_max_level_warn"] }

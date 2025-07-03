@@ -3,3 +3,5 @@ standard-macro-braces = [{ name = "children", brace = "[" }]
 # Disable lints for if-let chains to ensure `stable` compatibility.
 # See https://github.com/rust-lang/rust-clippy/issues/14825
 msrv = "1.87"
+# Types can get complex in Bevy
+type-complexity-threshold = 400
