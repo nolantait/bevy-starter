@@ -10,6 +10,10 @@ mod input;
 mod physics;
 mod utils;
 
+mod prelude {
+    pub use crate::utils::*;
+}
+
 pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
