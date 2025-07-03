@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+mod asset_tracking;
 mod camera;
 mod debug;
 mod default;
@@ -19,6 +20,7 @@ pub struct AppPlugin;
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            asset_tracking::plugin,
             default::plugin,
             fonts::plugin,
             camera::plugin,
