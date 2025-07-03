@@ -20,6 +20,13 @@ default = [
   # Default to a native dev build.
   "dev_native",
 ]
+dev_native = [
+  "dev",
+  # Enable asset hot reloading for native dev builds.
+  "bevy/file_watcher",
+  # Enable embedded asset hot reloading for native dev builds.
+  "bevy/embedded_watcher",
+]
 dev = [
   # Improve compile times for dev builds by linking Bevy as a dynamic library.
   "bevy/dynamic_linking",
@@ -28,13 +35,6 @@ dev = [
   # Improve error messages coming from Bevy
   "bevy/track_location",
   "avian2d/diagnostic_ui"
-]
-dev_native = [
-  "dev",
-  # Enable asset hot reloading for native dev builds.
-  "bevy/file_watcher",
-  # Enable embedded asset hot reloading for native dev builds.
-  "bevy/embedded_watcher",
 ]
 
 [lints.clippy]
