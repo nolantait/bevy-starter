@@ -1,11 +1,12 @@
 # Bevy Starter
 
-This repo is a minimal starter for Bevy `0.15`
+This repo is a minimal starter for Bevy `0.16`
 
 ## Inspiration
 
 - [`bevy_space`](https://github.com/perlindgren/bevy-space)
 - [`bevy_new_2d`](https://github.com/TheBevyFlock/bevy_new_2d)
+- [`sobevy`](https://codeberg.org/doomy/sobevy)
 
 ## Building
 

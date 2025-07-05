@@ -4,7 +4,7 @@ use bevy::prelude::*;
 #[require(Camera2d)]
 pub struct MainCamera;
 
-pub(super) fn plugin(app: &mut App) {
+pub(crate) fn plugin(app: &mut App) {
     app.add_systems(Startup, initialize_camera);
 }
 

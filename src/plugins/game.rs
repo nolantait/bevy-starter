@@ -11,7 +11,7 @@ use crate::prelude::random_number;
 // If you wanted to toggle this plugin or configure it for the outside
 // you can reach for a `PluginGroup`.
 
-pub(super) fn plugin(app: &mut App) {
+pub(crate) fn plugin(app: &mut App) {
     // Your game logic here
     app;
 }
