@@ -7,6 +7,7 @@ This repo is a minimal starter for Bevy `0.16`
 - [`bevy_space`](https://github.com/perlindgren/bevy-space)
 - [`bevy_new_2d`](https://github.com/TheBevyFlock/bevy_new_2d)
 - [`sobevy`](https://codeberg.org/doomy/sobevy)
+- [`Mischief in miniature`](https://github.com/alice-i-cecile/mischief-in-miniature)
 
 ## Building
 
