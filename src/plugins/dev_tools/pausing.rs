@@ -3,6 +3,7 @@
 use std::time::Duration;
 
 use bevy::prelude::*;
+use avian2d::prelude::*;
 
 /// Plugin for pausing and stepping through the game.
 pub(super) struct PausePlugin;
