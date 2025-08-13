@@ -7,6 +7,7 @@ mod components;
 mod plugins;
 mod resources;
 mod styles;
+mod third_party;
 mod utils;
 
 /// Use this module instead of importing the `components`, `plugins`, `resources`, and `utils`
@@ -29,11 +30,11 @@ pub struct AppPlugin;
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            third_party::plugin,
             plugins::asset_tracking::plugin,
             plugins::default::plugin,
             plugins::fonts::plugin,
             plugins::camera::plugin,
-            plugins::physics::plugin,
             plugins::input::plugin,
             plugins::game::plugin,
         ));
