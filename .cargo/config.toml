@@ -1,4 +1,6 @@
-# Source: https://github.com/TheBevyFlock/bevy_new_2d/blob/main/.cargo/config_fast_builds.toml
+# Sources:
+#   - https://github.com/TheBevyFlock/bevy_new_2d/blob/main/.cargo/config_fast_builds.toml
+#   - https://discordapp.com/channels/691052431525675048/1405492726300151919/1405493730424786995
 #
 # Copy this file to `config.toml` to speed up your builds.
 #
@@ -78,6 +80,27 @@
 #
 # For more information, see the blog post at <https://blog.rust-lang.org/2023/11/09/parallel-rustc.html>.
 
+[unstable]
+codegen-backend = true
+
+[profile.dev]
+codegen-backend = "cranelift"
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+codegen-backend = "llvm"
+
+[profile.test.package."*"]
+codegen-backend = "llvm"
+
+# Cranelift cannot build wasm32-unknown-unknown out of the box
+[profile.web]
+codegen-backend = "llvm"
+
+# Disable cranelift for release profile
+[profile.release]
+codegen-backend = "llvm"
+
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = [
@@ -100,8 +123,13 @@ rustflags = [
   "-Clink-arg=-fuse-ld=/usr/bin/mold",
 
   # Nightly
-  # "-Zshare-generics=y",
-  # "-Zthreads=0",
+  "-Zshare-generics=y",
+  "-Zthreads=8",
+]
+rustdocflags = [
+  # Nightly
+  "-Zshare-generics=y",
+  "-Zthreads=8",
 ]
 
 [target.x86_64-apple-darwin]
