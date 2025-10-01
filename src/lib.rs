@@ -34,6 +34,6 @@ impl Plugin for AppPlugin {
 
         // Enable dev tools for dev builds.
         #[cfg(feature = "dev")]
-        app.add_plugins((plugins::dev_tools::plugin, plugins::debug::plugin));
+        app.add_plugins(plugins::debug::plugin);
     }
 }
