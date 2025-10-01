@@ -23,7 +23,6 @@ impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             third_party::plugin,
-            plugins::asset_tracking::plugin,
             plugins::camera::plugin,
             plugins::default::plugin,
             plugins::fonts::plugin,
