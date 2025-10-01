@@ -24,4 +24,3 @@ mod tests {
         assert!(app.world().contains_resource::<Gravity>());
     }
 }
-
