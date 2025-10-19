@@ -1,7 +1,7 @@
 # Bevy TLDR
 
-Bevy is an archetype Entity-Component-System (ECS) game engine built in Rust. It
-emphasizes modularity, performance, and ease of use.
+Bevy is an archetypal Entity Component System (ECS) game engine built in Rust.
+It emphasizes modularity, performance, and ease of use.
 
 ## Entity and Components
 
@@ -10,14 +10,10 @@ identifier to find associated components where the real data is stored.
 
 Each `Entity` can only have a single `Component` of each type. These components can
 be added and removed dynamically over the course of the entity's lifetime.
-Everything is stored inside a `World` and everything is managed by the `App`.
+Everything is stored inside a `World` which is managed by an `App`.
 
 A good mental model to use is that entities represent a row in an in-memory
 database, while components are our columns.
-
-- **Entities** An identifier for a row
-- **Components** A column in a row
-- **Systems** All the behavior
 
 We define components by deriving the `Component` trait:
 
@@ -52,7 +48,28 @@ that __need__ to happen:
 4. `#[component(on_remove = on_remove_function)]`
 5. `#[component(on_despawn = on_despawn_function)]`
 
-Components can also be required by other components
+The systems we pass to these take a `DeferredWorld` and a `HookContext`
+
+```rust
+#[derive(Component, Default)]
+#[component(on_add = on_ship_added)]
+enum Ship {
+  Destroyer,
+  Frigate,
+  #[default]
+  Scout,
+}
+
+fn on_ship_added(mut world: DeferredWorld, context: HookContext) {
+  world
+    .commands()
+    .entity(context.entity)
+    .insert(Position { x: 0, y: 0 });
+}
+```
+
+The more standard way to add components based on other components is to make
+them required:
 
 ```rust
 #[derive(Component)]
@@ -373,7 +390,7 @@ are wrapped by a condition type:
 |`Added<T>`|only components of type `T` that were added this tick|
 
 To retrieve components from our ECS storage our `Query` system parameter
-provides several methods:
+provides an API with the following methods:
 
 |method|description|
 |------|-----------|
@@ -481,7 +498,8 @@ This is done to ensure each system has an opportunity to see each
 message. It is helping systems not have to care about the exact ordering within
 a frame.
 
-Messages are defined by deriving the `Message` trait:
+Messages are defined by deriving the `Message` trait and need to be registered
+to the `App`:
 
 ```rust
 // With a marker message
@@ -539,8 +557,8 @@ Events are the immediate version of messages. They come in two types:
 1. `Event` for global events defined with a `GlobalTrigger`
 2. `EntityEvent` for entity specific events defined with an `EntityTrigger`
 
-These events are consumed by an `Observer` which is a callback system that takes
-an `On` system parameter:
+These events are consumed by an `Observer` which is a callback system that
+__must__ take an `On` system parameter as the __first__ argument:
 
 ```rust
 fn on_respawn(
@@ -920,6 +938,7 @@ Nodes are laid out with either a flexbox or CSS grid layout.
 This is what a `Node` looks like:
 
 ```rust
+// https://docs.rs/bevy/latest/bevy/prelude/struct.Node.html
 impl Node {
   pub const DEFAULT: Self = Self {
     display: Display::DEFAULT,
