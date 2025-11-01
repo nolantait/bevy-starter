@@ -337,14 +337,15 @@ using the two generic parameters:
 Query<D, F>
 
 //      --------- Give us read-only access to all the `Transform` components
-//     |     ---- Which have a `Player` component on the same entity
-//     v     v
-Query<&Ball, With<Player>>
+//     |          ---- Which have a `Player` component on the same entity
+//     v          v
+Query<&Transform, With<Player>>
 
 //                     --- NOTE: Each parameter can be a tuple as well
 //                    |
 //                    v
 Query<&mut Transform, (With<Player>, With<Living>)>
+
 ```
 
 When one of the generic parameters is a tuple then ___all___ the types in that
@@ -357,6 +358,7 @@ There are convenient types that make expressing more complicated queries easier:
 |`Option<T>`|a component but only if it exists, otherwise `None`|
 |`AnyOf<T>`|fetches entities with any of the components in type T|
 |`Ref<T>`|shared borrow of an entity's component `T` with access to change detection|
+|`Has<T>`|Returns a bool that describes if an entity has the component `T`|
 |`Entity`|returns the entity|
 
 In addition to the `Query` system parameter there are other sibling system
@@ -557,6 +559,12 @@ Events are the immediate version of messages. They come in two types:
 1. `Event` for global events defined with a `GlobalTrigger`
 2. `EntityEvent` for entity specific events defined with an `EntityTrigger`
 
+The default behavior of `EntityEvent` is not to propagate. To auto propagate,
+the events needs to be marked with `#[entity_event(propagate, auto_propagate)]`
+which will tell the derive macro to add the propagation functionality.
+
+To propagate manually you would `On<T, B>::propagate(true)`.
+
 These events are consumed by an `Observer` which is a callback system that
 __must__ take an `On` system parameter as the __first__ argument:
 
@@ -589,7 +597,8 @@ fn spawn_boss(mut commands: Commands) {
 }
 ```
 
-These entity events will bubble up a hierarchy of `ChildOf` attached components.
+These entity events will bubble up a hierarchy of `ChildOf` attached components
+depending on if you have set them to auto propagate or not.
 
 This table summarizes the differences between events and messages:
 
