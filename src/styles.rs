@@ -1,4 +1,4 @@
-#[allow(dead_code)]
+#[allow(unused)]
 pub mod colors {
     use bevy::color::Srgba;
     use bevy::color::palettes::tailwind;

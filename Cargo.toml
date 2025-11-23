@@ -84,3 +84,13 @@ inherits = "release"
 opt-level = 3
 # Keep debug information in the binary.
 strip = "none"
+
+# This profile will be used by `bevy run web` automatically.
+[profile.web-release]
+# Default to release profile values.
+inherits = "release"
+# Optimize with size in mind (also try "z", sometimes it is better).
+# Slightly slows compile times, great improvements to file size and runtime performance.
+opt-level = "s"
+# Strip all debugging information from the binary to slightly reduce file size.
+strip = "debuginfo"
