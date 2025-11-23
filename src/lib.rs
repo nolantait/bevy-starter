@@ -23,7 +23,7 @@ impl Plugin for AppPlugin {
         app.add_plugins((
             third_party::plugin,
             plugins::camera::plugin,
-            plugins::default::plugin,
+            plugins::defaults::plugin,
             plugins::fonts::plugin,
             plugins::game::plugin,
             plugins::input::plugin,
