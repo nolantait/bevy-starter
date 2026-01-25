@@ -1,6 +1,6 @@
 # Bevy Starter
 
-This repo is a minimal starter for Bevy `0.16`
+This repo is a minimal starter for Bevy `0.17`
 
 ## Inspiration
 
