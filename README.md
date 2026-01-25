@@ -23,6 +23,17 @@ If you want the extra dev features then you can toggle them:
 cargo run --features dev
 ```
 
+Depending on if you are building a 2D or 3D game you can set your Bevy features
+accordingly in `Cargo.toml` to reduce compile times. For 2D games you can use:
+
+```toml
+bevy = { version = "0.18", default-features = false, features = ["2d"] }
+```
+
+See
+[Cargo Feature Collections](https://bevy.org/news/bevy-0-18/#cargo-feature-collections)
+for more information.
+
 ## Features
 
 - Cargo configured according to Bevy guide with build optimizations
