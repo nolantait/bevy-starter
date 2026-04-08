@@ -5,15 +5,15 @@ It emphasizes modularity, performance, and ease of use.
 
 ## Entity and Components
 
-An `Entity` on its own holds no data or behavior. The actual `Entity` is just an
-identifier to find associated components where the real data is stored.
-
-Each `Entity` can only have a single `Component` of each type. These components can
-be added and removed dynamically over the course of the entity's lifetime.
-Everything is stored inside a `World` which is managed by an `App`.
+An `Entity` is just an identifier to find associated `Component`. A `Component`
+is what actually stores the data that makes up each entity.
 
 A good mental model to use is that entities represent a row in an in-memory
 database, while components are our columns.
+
+Each `Entity` can only have a single `Component` per type. These components can
+be added and removed dynamically over the course of the entity's lifetime.
+Everything is stored inside a `World` which is managed by an `App`.
 
 We define components by deriving the `Component` trait:
 
@@ -48,7 +48,7 @@ that __need__ to happen:
 4. `#[component(on_remove = on_remove_function)]`
 5. `#[component(on_despawn = on_despawn_function)]`
 
-The systems we pass to these take a `DeferredWorld` and a `HookContext`
+The systems we pass to these take a `DeferredWorld` and a `HookContext`.
 
 ```rust
 #[derive(Component, Default)]
@@ -68,7 +68,7 @@ fn on_ship_added(mut world: DeferredWorld, context: HookContext) {
 }
 ```
 
-The more standard way to add components based on other components is to make
+The preferred way to add components based on other components is to make
 them required:
 
 ```rust
@@ -90,8 +90,8 @@ each required component implements the `Default` trait.
 All these required calls are __recursive__. If a component you require has
 required components, they will also be added.
 
-A `Resource` is a special kind of component that has no `Entity`. They have more
-convenient accessors for systems since there is only ever one of them.
+A `Resource` is a special kind of component that has no `Entity`. These are
+singleton components that are easier to query for inside our systems.
 
 ```rust
 #[derive(Resource)]
@@ -128,7 +128,8 @@ fn spawn_player(mut commands: Commands) {
 more performant than letting each system mutate the world directly.
 
 When you use the system parameter `Commands` you are enqueuing your commands to
-the `CommandQueue` which runs when we transition to the next `Schedule`.
+the `CommandQueue` which runs when we transition to the next `Schedule` which is
+advanced by the `App`.
 
 ## Apps
 
@@ -214,6 +215,8 @@ impl AppState {
 
 ## Plugins
 
+Plugins are a way to group related functionality together.
+
 Almost every app will include the `DefaultPlugins` plugin which groups together
 all the default functionality needed for a game.
 
@@ -233,13 +236,13 @@ fn main() {
 |__DiagnosticsPlugin__|Adds core diagnostics|
 |__DlssInitPlugin__|Initializes DLSS support if available|
 |__FrameCountPlugin__|Adds frame counting functionality|
-|__HierarchyPlugin__|Handles `Parent` and `Children` components|
 |__InputPlugin__|Adds keyboard and mouse input|
 |__PanicHandlerPlugin__|Adds sensible panic handling|
 |__ScheduleRunnerPlugin__|Configures an `App` to run its `Schedule` according to a given `RunMode`|
-|__TaskPoolPlugin__|Setup of default task pools for multithreading|
+|__TaskPoolPlugin__|Setup of default task pools for multi-threading|
 |__TimePlugin__|Adds time functionality|
 |__TransformPlugin__|Handles `Transform` components|
+
 
 Then additionally, depending on the features you enable, it will include:
 
@@ -258,6 +261,7 @@ Then additionally, depending on the features you enable, it will include:
 |__GltfPlugin__|`bevy_gltf`|Adds support for loading gltf models|
 |__GilrsPlugin__|`bevy_gilrs`|Adds support for gamepad inputs|
 |__GizmoPlugin__|`bevy_gizmos`|Provides an immediate mode drawing api for visual debugging|
+|__GizmoRenderPlugin__|`bevy_gizmos_render`|Sends gizmos to the renderer|
 |__HotPatchPlugin__|`hotpatching`|Enables hot-patching of assets|
 |__ImagePlugin__|`bevy_render`|Adds the `Image` asset and prepares them to render on your GPU|
 |__LightPlugin__|`bevy_light`|Adds light components and systems|
@@ -269,18 +273,19 @@ Then additionally, depending on the features you enable, it will include:
 |__RenderPlugin__|`bevy_render`|Sets up rendering backend powered by `wgpu` crate|
 |__ScenePlugin__|`bevy_scene`|Loading and saving collections of entities and components to files|
 |__SpritePlugin__|`bevy_sprite`|Handling of sprites (images on our entities)|
+|__SpriteRenderPlugin__|`bevy_sprite_render`|Adds support for sending sprites to the renderer|
 |__StatesPlugin__|`bevy_state`|Adds state management for Apps|
 |__TerminalCtrlCHandlerPlugin__|`std`|Handles Ctrl-C signals in terminal applications|
 |__TextPlugin__|`bevy_text`|Supports loading fonts and rendering text|
 |__UiPlugin__|`bevy_ui`|Adds support for UI layouts (flex, grid, etc)|
 |__UiRenderPlugin__|`bevy_ui_render`|Adds support for sending UI nodes to renderer|
+|__WebAssetPlugin__|`bevy_asset`|Adds the `http` and `https` asset sources to an app|
 |__WindowPlugin__|`bevy_window`|Provides an interface to create and manage `Window` components|
 |__WinitPlugin__|`bevy_winit`|Interface to create operating system windows (to actually display our game)|
 
 
-Plugins are a way to group related functionality together. They receive a
-mutable reference to the `App` and can add systems, resources, and other
-plugins. Plugins are run in the order they are added to the `App`.
+Plugins receive a mutable reference to the `App` and can add systems, resources,
+and other plugins. Plugins are run in the order they are added to the `App`.
 
 ```rust
 fn plugin(app: &mut App) {
@@ -345,7 +350,6 @@ Query<&Transform, With<Player>>
 //                    |
 //                    v
 Query<&mut Transform, (With<Player>, With<Living>)>
-
 ```
 
 When one of the generic parameters is a tuple then ___all___ the types in that
@@ -378,6 +382,9 @@ fn move_the_only_player(mut transform: Single<&mut Transform, With<Player>>) {
   transform.translation.x += 1.
 }
 ```
+
+This system would NOT be run unless there was a single entity that matched the
+components we query.
 
 The second argument in your `Query<D, F>` is the `QueryFilter`. These filters
 are wrapped by a condition type:
@@ -1104,6 +1111,74 @@ first entry is the furthest node and the first to get rendered on the screen.
 
 However the first node is also the last to receive any interactions so its
 actually the final node that would be interacted with.
+
+## Picking
+
+To enable clicking, dragging and other interactions we use bevy's built in
+picking library.
+
+A picking backend `PointerLocation` components and produce `PointerHits`
+events that contain these pointers and the entities they are hitting.
+
+An app can have multiple picking backends active at once.
+
+A `PointerHit` event contains information about what entities a pointer is
+currently hitting:
+
+```rust
+pub struct PointerHits {
+    pub pointer: PointerId,
+    pub picks: Vec<(Entity, HitData)>,
+    pub order: f32,
+}
+```
+
+These `PointerHits` are then used by the generic picking plugins to produce
+higher level `Pointer<E>` events which we can react to with either an `Observer`
+or `MessageReader`.
+
+A `Pointer` event is what Bevy uses to store the common data needed for pointer
+events. They can come from 3 things:
+
+1. Windows
+2. Images
+3. GPU Texture Views
+
+Bevy's `DefaultPlugins` includes the `DefaultPickingPlugins` if you have the
+`bevy_picking` feature enabled which contains:
+
+
+|Plugin|Description|
+|------|-----------|
+|`InteractionPlugin`|Generates pointer events and handles event bubbling|
+|`PickingPlugin`|Manages the picking state and generates higher level events|
+|`PointerInputPlugin`|Mouse and touch events for picking pointers|
+
+
+Picking can be disabled for individual entities by adding `Pickable::IGNORE`.
+
+Sprites and UI elements have a picking backend already enabled. To enable
+picking meshes we need to add the `MeshPickingPlugin`.
+
+Within a single frame, the order of picking events is:
+
+1. `Out` -> `DragLeave`
+2. `DragEnger` -> `Over`
+
+Then any of the following can happen in any order:
+
+- For each movement: `DragStart` -> `Drag` -> `DragOver` -> `Move`
+- For each button press: `Press` or `Click` -> `Release` -> `DragDrop` ->
+  `DragEnd` -> `DragLeave`
+- For each pointer cancellation: `Cancel`
+
+Between frames things are managed by the interaction state machine:
+
+- When a pointer moves over the target: `Over` -> `Move` -> `Out`
+- When a pointer presses buttons on the target: `Press` -> `Click` -> `Release`
+- When a pointer drags the target: `DragStart` -> `Drag` -> `DragEnd`
+- When a pointer drags something over the target: `DragEnter` -> `DragOver` -> `DragDrop` -> `DragLeave`
+- When a pointer is canceled: No other events will follow the `Cancel` event for that pointer.
 
 ## Timers
 
