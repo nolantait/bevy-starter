@@ -9,10 +9,10 @@ publish = false
 
 [dependencies]
 bevy = "0.18"
-avian2d = "0.5"
-bevy_enhanced_input = "0.22"
+avian2d = "0.6"
+bevy_enhanced_input = "0.24"
 
-rand = "0.9"
+rand = { version = "0.10", features = ["thread_rng"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_error"] }
 # Compile low-severity logs out of web builds for performance.
 tracing = { version = "0.1", features = ["max_level_debug", "release_max_level_warn"] }
