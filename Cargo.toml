@@ -10,7 +10,7 @@ publish = false
 [dependencies]
 bevy = "0.18"
 avian2d = "0.6"
-bevy_enhanced_input = "0.24"
+bevy_enhanced_input = "0.25"
 
 rand = { version = "0.10", features = ["thread_rng"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_error"] }
