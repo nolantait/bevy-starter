@@ -39,8 +39,8 @@ for more information.
 - Cargo configured according to Bevy guide with build optimizations
 - [Avian](https://github.com/Jondolf/avian) physics
 - Generic set of starting plugins with your games logic inside `GamePlugin`
-- `TLDR.md` for passing to tools like [`aider`](https://aider.chat/) and others
-  that helps them get more recent context from Bevy
+- `TLDR.md` for quick reference and passing to LLMs
+- `.agents` folder with bevy skills for LLMs
 
 ## Missing
 
