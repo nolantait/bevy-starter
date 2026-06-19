@@ -1,5 +1,3 @@
-# Bevy TLDR
-
 Bevy is an archetypal Entity Component System (ECS) game engine built in Rust.
 It emphasizes modularity, performance, and ease of use.
 
@@ -18,21 +16,26 @@ Everything is stored inside a `World` which is managed by an `App`.
 We define components by deriving the `Component` trait:
 
 ```rust
+// A simple marker type
 #[derive(Component)]
-struct Player;
+struct Enemy;
 
-#[derive(Component)]
+// Or an enum
+#[derive(Component, Default)]
+#[component(on_add = on_ship_added)]
 enum Ship {
   Destroyer,
-  Cruiser,
-  Battleship,
+  Frigate,
+  #[default]
+  Scout,
 }
 
+// A unit struct component
 #[derive(Component)]
 struct Health(f32);
 
-#[derive(Component)]
-#[component(on_add = on_position_added)]
+// With fields
+#[derive(Component, Default)]
 struct Position {
   x: i32,
   y: i32,
@@ -51,6 +54,10 @@ that __need__ to happen:
 The systems we pass to these take a `DeferredWorld` and a `HookContext`.
 
 ```rust
+use bevy::ecs::lifecycle::HookContext;
+use bevy::ecs::world::DeferredWorld;
+
+// Or an enum
 #[derive(Component, Default)]
 #[component(on_add = on_ship_added)]
 enum Ship {
@@ -76,9 +83,7 @@ them required:
 #[require(Position, Ship)]
 struct Player;
 
-fn spawn_player_with_required_components(
-  mut commands: Commands
-) {
+fn spawn_player_with_required_components(mut commands: Commands) {
   commands.spawn(Player);
 }
 ```
@@ -100,11 +105,10 @@ struct Score(usize);
 fn main() {
   App::new()
     .add_plugins(DefaultPlugins)
-    .init_resource::<Score>()
+    .insert_resource(Score(0))
     .run();
 }
 ```
-
 ## Systems
 
 Systems are where we trigger side effects that change our game's state.
@@ -114,16 +118,13 @@ parameters that implement `SystemParam`.
 
 ```rust
 fn spawn_player(mut commands: Commands) {
-  // Spawns a single entity with multiple components
-  commands.spawn((
-      Player,
-      Ship::Destroyer,
-      Health(100.0),
-      Position { x: 1, y: 2 }
-  ));
+  commands
+    .spawn_empty()
+    .insert(Player)
+    .insert(Ship::Destroyer)
+    .insert(Position { x: 1, y: 2 });
 }
 ```
-
 `Commands` are what we use to change the state of our `World` in a way that is
 more performant than letting each system mutate the world directly.
 
@@ -140,11 +141,11 @@ certain points in the game's loop:
 use bevy::prelude::*;
 
 fn main() {
-   App::new()
-     .add_systems(Startup, setup_everything)
-     .add_systems(Update, process_input)
-     .add_systems(FixedUpdate, move_player)
-     .run();
+  App::new()
+    .add_plugins(DefaultPlugins)
+    .add_systems(Startup, setup_everything)
+    .add_systems(Update, move_player)
+    .run();
 }
 ```
 
@@ -188,16 +189,21 @@ enum AppState {
 
 fn main() {
   App::new()
+    .add_plugins(DefaultPlugins)
     // Add our state to our app definition
     .init_state::<AppState>()
+    .init_resource::<Ui>()
+    .add_systems(Startup, setup)
+    .add_observer(on_menu_button_pressed)
     // We can add systems to trigger during transitions
     .add_systems(OnEnter(AppState::MainMenu), spawn_menu)
+    .add_systems(OnExit(AppState::MainMenu), despawn_menu)
     // Or we can use run conditions
     .add_systems(Update, play_game.run_if(in_state(AppState::InGame)))
+    .add_systems(Update, toggle_game_pause)
     .run();
 }
 ```
-
 If we wanted to create explicit transitions we could implement the logic on our
 state:
 
@@ -212,7 +218,6 @@ impl AppState {
   }
 }
 ```
-
 ## Plugins
 
 Plugins are a way to group related functionality together.
@@ -221,13 +226,12 @@ Almost every app will include the `DefaultPlugins` plugin which groups together
 all the default functionality needed for a game.
 
 ```rust
+use bevy::prelude::*;
+
 fn main() {
-  App::new()
-    .add_plugins(DefaultPlugins)
-    .run();
+  App::new().add_plugins(DefaultPlugins).run();
 }
 ```
-
 `DefaultPlugins` includes the following
 
 
@@ -271,7 +275,7 @@ Then additionally, depending on the features you enable, it will include:
 |__PostProcessingPlugin__|`bevy_post_process`|Adds post processing effects|
 |__PipelinedRenderingPlugin__|`bevy_render`|Adds pipelined rendering|
 |__RenderPlugin__|`bevy_render`|Sets up rendering backend powered by `wgpu` crate|
-|__ScenePlugin__|`bevy_scene`|Loading and saving collections of entities and components to files|
+|__WorldSerializationPlugin__|`bevy_world_serialization`|Loading and saving collections of entities and components to files|
 |__SpritePlugin__|`bevy_sprite`|Handling of sprites (images on our entities)|
 |__SpriteRenderPlugin__|`bevy_sprite_render`|Adds support for sending sprites to the renderer|
 |__StatesPlugin__|`bevy_state`|Adds state management for Apps|
@@ -289,24 +293,22 @@ and other plugins. Plugins are run in the order they are added to the `App`.
 
 ```rust
 fn plugin(app: &mut App) {
-  app.add_system(some_plugin_system);
+  app.add_systems(Startup, some_plugin_system);
 }
 
 fn main() {
-  App::new().add_plugins(plugin);
+  App::new().add_plugins(plugin).run();
 }
 ```
-
 If we need to manage the life-cycle of a plugin we can implement the `Plugin`
 trait and hook into it.
 
 ```rust
-pub struct CameraPlugin;
+struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
-  fn cleanup(&self, _app: &App) -> bool {
-    info!("Time to clean up")
-    true
+  fn cleanup(&self, _app: &mut App) {
+    info!("Time to clean up");
   }
 
   fn build(&self, app: &mut App) {
@@ -314,8 +316,8 @@ impl Plugin for CameraPlugin {
   }
 }
 
-fn initialize_camera(mut commands: Commands) {
-  commands.spawn(Camera2d);
+fn main() {
+  App::new().add_plugins(plugin).run();
 }
 ```
 
@@ -331,7 +333,6 @@ fn fetch_players(query: Query<&Player>) {
   }
 }
 ```
-
 The `Query` system parameter lets us specify the data we want from each entity
 using the two generic parameters:
 
@@ -382,7 +383,6 @@ fn move_the_only_player(mut transform: Single<&mut Transform, With<Player>>) {
   transform.translation.x += 1.
 }
 ```
-
 This system would NOT be run unless there was a single entity that matched the
 components we query.
 
@@ -429,7 +429,7 @@ struct PlayerRef(Entity);
 
 fn move_player_by_component(
   mut query: Query<&mut Transform>,
-  player: Res<PlayerRef>
+  player: Res<PlayerRef>,
 ) {
   if let Ok(mut transform) = query.get_mut(player.0) {
     transform.translation.x += 1.;
@@ -441,19 +441,17 @@ In cases where we have a list of `Entity` and we want to iterate over only those
 entity components we can use `iter_many`.
 
 ```rust
-#[derive(Component)]
-struct Health(pub f32);
+#[derive(Component, Debug)]
+struct Health(f32);
 
 #[derive(Resource)]
 struct Selection {
-  enemies: Vec<Entity>
+  enemies: Vec<Entity>,
 }
-
-const ATTACK_DAMAGE: f32 = 10.;
 
 fn attack_selected_enemies(
   mut query: Query<&mut Health>,
-  selected: Res<Selection>
+  selected: Res<Selection>,
 ) {
   let mut iter = query.iter_many_mut(&selected.enemies);
   while let Some(mut health) = iter.fetch_next() {
@@ -475,17 +473,14 @@ All assets follow the same general process:
 4. Then we call `AssetServer::load` to get a `Handle<T>` to the asset
 
 ```rust
-fn load_images(asset_server: Res<AssetServer>, mut commands: Commands) {
+fn load_images(
+  mut bevy_image: ResMut<BevyImage>,
+  asset_server: Res<AssetServer>,
+) {
   // This will not block, the asset will be loaded in the background
-  let image_handle: Handle<Image> = asset_server.load("images/bevy.png");
-
-  commands.spawn(Sprite {
-    image: image_handle,
-    ..default()
-  });
+  bevy_image.0 = asset_server.load("example_images/bevy.png");
 }
 ```
-
 By default it will expect our assets to be inside the `assets` folder inside
 the root directory of our application controlled by the `BEVY_ASSET_ROOT`
 environment variable.
@@ -528,9 +523,9 @@ struct PlayerDamaged {
 
 fn main() {
   App::new()
-    .add_message::<PlayerKilled>();
-    .add_message::<PlayerDetected>();
-    .add_message::<PlayerDamaged>();
+    .add_plugins(DefaultPlugins)
+    .add_message::<PlayerKilled>()
+    .run();
 }
 ```
 
@@ -545,11 +540,11 @@ fn detect_player(
   players: Query<(Entity, &Transform), With<Player>>,
 ) {
   for (entity, transform) in players {
+    // ...
     messages.write(PlayerDetected(entity));
   }
 }
 ```
-
 We can read messages from our systems with an
 `MessageReader<T>` that consumes messages from our buffers:
 
@@ -560,7 +555,6 @@ fn react_to_detection(mut messages: MessageReader<PlayerDetected>) {
   }
 }
 ```
-
 Events are the immediate version of messages. They come in two types:
 
 1. `Event` for global events defined with a `GlobalTrigger`
@@ -576,34 +570,29 @@ These events are consumed by an `Observer` which is a callback system that
 __must__ take an `On` system parameter as the __first__ argument:
 
 ```rust
-fn on_respawn(
-  event: On<Add, Enemy>,
-  query: Query<(&Enemy, &Position)>,
-) {
+fn on_respawn(event: On<Add, Enemy>, query: Query<(&Enemy, &Position)>) {
   let (enemy, position) = query.get(event.entity).unwrap();
   println!("Enemy was respawned at {:?}", position);
 }
 ```
-
 Observers can be global by adding them to the `App` definition:
 
 ```rust
 fn main() {
-  App::new().add_plugins(DefaultPlugins).add_observer(on_respawn);
+  App::new()
+    .add_plugins(DefaultPlugins)
+    .add_observer(on_respawn);
 }
 ```
-
 Or they can be local and only triggered for particular entities:
 
 ```rust
 fn spawn_boss(mut commands: Commands) {
   let entity = commands.spawn((Enemy, Boss)).observe(on_boss_spawned).id();
 
-  // Later, or potentially in another system
   commands.trigger(BossSpawned { entity });
 }
 ```
-
 These entity events will bubble up a hierarchy of `ChildOf` attached components
 depending on if you have set them to auto propagate or not.
 
@@ -635,59 +624,56 @@ When you despawn the parent (the entity holding the `Children`) then all the
 
 ```rust
 fn spawn_ship(mut commands: Commands) {
-  let fleet = commands.spawn(Fleet).id();
+  let fleet = commands.spawn((Fleet, Name::new("Fleet A"))).id();
 
-  commands.spawn(Ship, ChildOf(fleet));
+  commands.spawn((Ship, Name::new("Ship A"), ChildOf(fleet)));
 }
 ```
-
 We can spawn children from a parent with the `with_children` method:
 
 ```rust
 fn spawn_fleet(mut commands: Commands) {
+  // Spawn a Fleet entity
   commands
-    .spawn(Fleet)
+    .spawn((Fleet, Name::new("Fleet A")))
     .with_children(|parent| {
+      // Spawn a Ship entity as a child of the Fleet
       parent.spawn((Ship, Name::new("Ship 1")));
       parent.spawn((Ship, Name::new("Ship 2")));
     });
 }
 ```
-
 Instead of the closure we can pass a bundle of children to the `children!` macro.
 
 ```rust
 fn spawn_fleet_with_sugar(mut commands: Commands) {
   commands.spawn((
     Fleet,
-    children![
-      (Ship, Name::new("Ship 3")),
-      (Ship, Name::new("Ship 4")),
-    ]
+    Name::new("Fleet B"),
+    children![(Ship, Name::new("Ship 3")), (Ship, Name::new("Ship 4")),],
   ));
 }
 ```
-
 The source of truth is the `Relationship` component. This is the component we
 will be adding to __other entities__ to specify the relationship. It must contain
 a reference to the entity we will be attaching ourselves to.
 
 ```rust
+// This is the relationship FROM child TO parent
 #[derive(Component)]
 #[relationship(relationship_target = ShipAttachments)]
-struct AttachedToShip(pub Entity);
+struct AttachedToShip(Entity);
 ```
-
 The `RelationshipTarget` is the component that will automatically be kept in
 sync with all our `AttachedToShip` components. It must contain a list of
 entities to store them.
 
 ```rust
+// This is the relationship target on the parent
 #[derive(Component)]
-#[relationship_target(relationship = AttachedToShip, linked_spawn)]
+#[relationship_target(relationship = AttachedToShip)]
 struct ShipAttachments(Vec<Entity>);
 ```
-
 The `linked_spawn` will allow us to remove the `ShipAttachments` and Bevy will
 automatically despawn any `AttachedToShip` components on our other entities.
 
@@ -695,9 +681,9 @@ To create the relationship we can then spawn this `Relationship` on other
 entities.
 
 ```rust
-fn spawn_ship(mut commands: Commands) {
+fn spawn_attached_to_ship(mut commands: Commands) {
   // Spawn the parent Ship
-  let ship = commands.spawn((Ship, Name::new("Ship"))).id();
+  let ship = commands.spawn(Ship).id();
 
   // Spawn a GunTurret and attach it to the Ship using the new Relationship
   // component
@@ -705,7 +691,6 @@ fn spawn_ship(mut commands: Commands) {
   commands.spawn((GunTurret, AttachedToShip(ship), Name::new("GunTurret 2")));
 }
 ```
-
 This can be shortened by using the `related!` macro to specify the relationships
 from the parent entity instead:
 
@@ -723,7 +708,6 @@ fn build_ship(mut commands: Commands) {
   ));
 }
 ```
-
 Relationships are stored as components so we can query them:
 
 ```rust
@@ -742,7 +726,6 @@ fn log_ship_report(
   }
 }
 ```
-
 You can iterate the association from either side of the relationship:
 
 ```rust
@@ -759,7 +742,9 @@ fn iterate_from_turrets_to_ships(
     }
   }
 }
+```
 
+```rust
 fn iterate_from_ships_to_turrets(
   ships: Query<Entity, With<Ship>>,
   turrets: Query<Entity, With<GunTurret>>,
@@ -815,36 +800,36 @@ We can read these events in general by listening to `KeyboardInput` events:
 
 ```rust
 /// Track keyboard inputs — useful for debugging or keybinding tools
-fn log_keyboard_input(mut keyboard_events: EventReader<KeyboardInput>) {
-    for event in keyboard_events.read() {
-        println!(
-            "Key pressed: {:?}, logical key: {:?}",
-            event.key_code, event.logical_key
-        );
-    }
+fn log_keyboard_input(mut keyboard_events: MessageReader<KeyboardInput>) {
+  for event in keyboard_events.read() {
+    println!(
+      "Key pressed: {:?}, logical key: {:?}",
+      event.key_code, event.logical_key
+    );
+  }
 }
 ```
-
 Or we can use the resource to check for a more specific state:
 
 ```rust
 /// Handle player jump
 fn jump_input_system(input: Res<ButtonInput<KeyCode>>) {
-    if input.just_pressed(KeyCode::Space) {
-        info!("Jump!");
-    }
-}
-
-fn combo_key_system(input: Res<ButtonInput<KeyCode>>) {
-    let shift = input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
-    let ctrl = input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
-
-    if ctrl && shift && input.just_pressed(KeyCode::KeyA) {
-        info!("Special ability activated! (Ctrl + Shift + A)");
-    }
+  if input.just_pressed(KeyCode::Space) {
+    info!("Jump!");
+  }
 }
 ```
+```rust
+/// Handle combos or hotkeys, e.g., casting special ability
+fn combo_key_system(input: Res<ButtonInput<KeyCode>>) {
+  let shift = input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
+  let ctrl = input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
 
+  if ctrl && shift && input.just_pressed(KeyCode::KeyA) {
+    info!("Special ability activated! (Ctrl + Shift + A)");
+  }
+}
+```
 When you place your mouse on the screen it would two positions:
 
 1. On-screen coordinates (the position of the pixel on a screen)
@@ -859,17 +844,18 @@ If the cursor position is unknown (e.g we are alt+tabbed out of our game) then
 the position will be `None`.
 
 ```rust
-use bevy::ui::RelativeCursorPosition;
-
+// This systems polls the relative cursor position
+// and displays its value in a text component.
 fn relative_cursor_position(cursor_query: Query<&RelativeCursorPosition>) {
   if let Ok(cursor) = cursor_query.single() {
+    // This is an `Option<Vec2>` as an unknown cursor position
+    // will return `None`
     if let Some(cursor) = cursor.normalized {
       info!("({:.1}, {:.1})", cursor.x, cursor.y)
     }
   }
 }
 ```
-
 ## Cameras
 
 Each `Camera` is responsible for 3 main things:
@@ -900,26 +886,13 @@ pub struct MainCamera;
 fn initialize_camera(mut commands: Commands) {
   commands.spawn(MainCamera);
 }
+```
 
-fn move_camera(
-  mut camera: Single<&mut Transform, With<MainCamera>>,
-  player: Single<&Transform, With<Player>>,
-  time: Res<Time>,
-) {
-  let direction = Vec3::new(
-    player.translation.x,
-    player.translation.y,
-    camera.translation.z,
-  );
-
-  camera.translation =
-    camera.translation.lerp(direction, time.delta_secs() * 2.);
-}
-
+```rust
 fn rotate_camera_to_mouse(
   time: Res<Time>,
   mut mouse_motion: MessageReader<MouseMotion>,
-  mut transform: Single<&mut Transform, With<Camera>>,
+  mut transform: Single<&mut Transform, With<MainCamera>>,
 ) {
   let dt = time.delta_secs();
   // The factors are just arbitrary mouse sensitivity values.
@@ -943,7 +916,6 @@ fn rotate_camera_to_mouse(
   }
 }
 ```
-
 ## UI
 
 Bevy's UI system is also done through its ECS.
@@ -1005,8 +977,8 @@ Which we can use to spawn a simple UI box centered on the screen:
 ```rust
 fn spawn_box(mut commands: Commands) {
   let container = Node {
-    width: percent(100.0),
-    height: percent(100.0),
+    width: Val::Percent(100.0),
+    height: Val::Percent(100.0),
     justify_content: JustifyContent::Center,
     ..default()
   };
@@ -1014,8 +986,8 @@ fn spawn_box(mut commands: Commands) {
   let square = (
     BackgroundColor(Color::srgb(0.65, 0.65, 0.65)),
     Node {
-      width: px(200.),
-      border: UiRect::all(px(2.)),
+      width: Val::Px(200.),
+      border: UiRect::all(Val::Px(2.)),
       ..default()
     },
   );
@@ -1023,7 +995,6 @@ fn spawn_box(mut commands: Commands) {
   commands.spawn((container, children![(square)]));
 }
 ```
-
 All `Children` of a node will set their position to be relative to their
 parent, so the `Node` we spawned as a child will be placed in the center
 of its parent.
@@ -1034,41 +1005,43 @@ Text can be rendered in two separate ways:
 2. As part of our UI with `Text`
 
 ```rust
-fn spawn_text_in_ui(mut commands: Commands, assets: Res<AssetServer>) {
+fn spawn_in_ui(mut commands: Commands, assets: Res<AssetServer>) {
+  let regular_font_handle: Handle<Font> = Default::default();
+  let bold_font_handle: Handle<Font> = assets.load("fonts/Roboto-Bold.ttf");
+
   commands.spawn((
     Node {
       position_type: PositionType::Absolute,
-      bottom: px(5.0),
-      right: px(5.0),
+      bottom: Val::Px(5.0),
+      right: Val::Px(5.0),
       ..default()
     },
-    Text::new("Here is some text"),
-    TextColor(Color::BLACK),
-    TextLayout::new_with_justify(Justify::Center),
-  ));
-}
-
-fn spawn_text_in_scene(
-  asset_server: ResMut<AssetServer>,
-  mut commands: Commands,
-) {
-  commands.spawn((
-    TextFont {
-      font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-      font_size: 100.0,
-      ..default()
-    },
-    TextColor(Color::WHITE),
-    Text2d::new("Hello, Bevy!"),
-    TextLayout::new_with_justify(Justify::Center),
-    Transform::from_xyz(0., 0., 0.),
+    Text::new("Here is some text. But "),
+    TextFont::from(regular_font_handle.clone()),
+    children![(
+      TextSpan::new("this part is bold"),
+      TextFont::from(bold_font_handle.clone()),
+    )],
   ));
 }
 ```
+```rust
+fn spawn_in_scene(mut commands: Commands, assets: Res<AssetServer>) {
+  let font = assets.load("fonts/FiraSans-Bold.ttf");
 
+  commands.spawn((
+    Text2d::new("Here is some text in the scene"),
+    TextColor(Color::WHITE),
+    TextFont::from(font.clone()).with_font_size(60.),
+    TextLayout::justify(Justify::Center),
+  ));
+}
+```
 Adding interactivity happens through an `Interaction` component.
 
 ```rust
+use bevy::color::palettes::css::*;
+
 fn button_system(
   mut interactions: Query<
     (
@@ -1225,7 +1198,6 @@ fn time_passed(time: Res<Time>) {
   info!("Total time since startup: {:?}", time.elapsed());
 }
 ```
-
 Now lets say we wanted to have a `Cooldown` for one of our abilities. This
 wouldn't make sense as a `Resource` because the cooldown would be specific to
 one of our players.
@@ -1287,7 +1259,6 @@ fn local_timer(time: Res<Time>, mut timer: Local<Timer>) {
   }
 }
 ```
-
 ## Audio
 
 `AudioSource` holds the audio data and is connected to an `AudioSink` which is
@@ -1304,18 +1275,17 @@ A sink is a destination for the sound data. This is the place where sources will
 send their data and will be emitted to the global listener.
 
 ```rust
-fn play_pitch(
-    mut pitch_assets: ResMut<Assets<Pitch>>,
-    mut commands: Commands,
-) {
-    info!("playing pitch with frequency: {}", 220.0);
-    commands.spawn((
-        AudioPlayer(pitch_assets.add(Pitch::new(220.0, Duration::new(1, 0)))),
-        PlaybackSettings::DESPAWN,
-    ));
+use bevy::prelude::*;
+use std::time::Duration;
+
+fn play_pitch(mut pitch_assets: ResMut<Assets<Pitch>>, mut commands: Commands) {
+  info!("playing pitch with frequency: {}", 220.0);
+  commands.spawn((
+    AudioPlayer(pitch_assets.add(Pitch::new(220.0, Duration::new(1, 0)))),
+    PlaybackSettings::DESPAWN,
+  ));
 }
 ```
-
 There are a few different playback settings that are built in:
 
 |Setting|Description|
@@ -1335,19 +1305,9 @@ fn play_background_audio(
   let audio = asset_server.load("background_audio.ogg");
 
   // Create an entity dedicated to playing our background music
-  commands.spawn((
-    AudioPlayer::new(audio),
-    PlaybackSettings::LOOP,
-  ));
-
-  // Spawn our listener
-  commands.spawn((
-    SpatialListener::new(100.), // Gap between the ears
-    Transform::default(),
-  ));
+  commands.spawn((AudioPlayer::new(audio), PlaybackSettings::LOOP));
 }
 ```
-
 Once the asset is loaded the music will start playing in a loop until this
 entity we spawned is despawned or the component is removed.
 
@@ -1368,7 +1328,6 @@ fn pause(
   }
 }
 ```
-
 The `AudioSink` is our public API to:
 
 |Method|Description|
@@ -1395,7 +1354,13 @@ There are two separate sources of volume for our apps:
 To change the global volume we modify the `GlobalVolume` resource:
 
 ```rust
-use bevy::audio::Volume;
+use bevy::{
+  audio::{
+    GlobalVolume,
+    Volume,
+  },
+  prelude::*,
+};
 
 fn change_global_volume(mut volume: ResMut<GlobalVolume>) {
   volume.volume = Volume::Linear(0.5);
@@ -1410,11 +1375,11 @@ serialized into a file and then reinitialized when the scene is loaded.
 Scenes are saved into a `.scn` or `.scn.ron`. The format of the file is based on
 [Rusty Object Notation (RON)](https://crates.io/crates/ron).
 
-We save scenes to a file by using the `DynamicScene::serialize` method:
+We save scenes to a file by using the `DynamicWorld::serialize` method:
 
 ```rust
 fn save_scene_system(world: &mut World) {
-  let scene = DynamicScene::from_world(world);
+  let scene = DynamicWorld::from_world(world);
 
   // Scenes can be serialized like this:
   let type_registry = world.resource::<AppTypeRegistry>();
@@ -1438,18 +1403,17 @@ fn save_scene_system(world: &mut World) {
     .detach();
 }
 ```
-
 When Bevy loads the scene file, it needs to deserialize it into actual
 components and entities that it loads into your world.
 
 There are 3 ways to spawn scenes:
 
-1. Using `SceneSpawner::spawn_dynamic`
-2. Adding the `DynamicSceneRoot` component to an entity
-3. Using the `DynamicSceneBuilder` to construct a `DynamicScene` from a `World`
+1. Using `WorldInstanceSpawner::spawn_dynamic`
+2. Adding the `DynamicWorldRoot` component to an entity
+3. Using the `DynamicWorldBuilder` to construct a `DynamicWorld` from a `World`
 
-The easiest of these is simply spawning a `DynamicSceneRoot`. It uses the
-`SceneLoader` to deserialize everything:
+The easiest of these is simply spawning a `DynamicWorldRoot`. It uses the
+`WorldAssetLoader` to deserialize everything:
 
 ```rust
 const SCENE_FILE_PATH: &str = "scene.ron";
@@ -1457,31 +1421,24 @@ const SCENE_FILE_PATH: &str = "scene.ron";
 fn load_scene_system(mut commands: Commands, asset_server: Res<AssetServer>) {
   // "Spawning" a scene bundle creates a new entity and spawns new instances
   // of the given scene's entities as children of that entity.
-  let scene = asset_server.load(SCENE_FILE_PATH);
-  commands.spawn(DynamicSceneRoot(scene));
+  commands.spawn(DynamicWorldRoot(asset_server.load(SCENE_FILE_PATH)));
 }
 ```
 
 Once the scene has been loaded, a `SceneInstance` component is added to the
-component which can be used with the `SceneSpawner` to interact with the scene.
+component which can be used with the `WorldInstanceSpawner` to interact with the scene.
 
 For example we could despawn all our loaded scenes:
 
 ```rust
-use bevy::scene::SceneInstance;
-
-fn despawn_all_scenes(
-  query: Query<&SceneInstance>,
-  mut spawner: ResMut<SceneSpawner>,
+fn despawn_scene(
+  trigger: On<bevy::world_serialization::WorldInstanceReady>,
+  mut spawner: ResMut<WorldInstanceSpawner>,
   world: &mut World,
 ) {
-  // Despawning the scene root entity will also despawn all of its children
-  for instance in &query {
-    spawner.despawn_instance_sync(world, instance);
-  }
+  spawner.despawn_instance_sync(world, &trigger.instance_id);
 }
 ```
-
 The `FromWorld` trait determines how your component is constructed when it
 loads into the `World`.
 
@@ -1518,7 +1475,6 @@ fn move_things_with_position(mut query: Query<&mut Position>) {
   }
 }
 ```
-
 Just like a `Position` Avian provides a `Rotation` component.
 
 ```rust
@@ -1528,7 +1484,6 @@ fn rotate_things(mut query: Query<&mut Rotation>) {
   }
 }
 ```
-
 Rigid bodies come in 3 different components, each specialized for something:
 
 1. `RigidBody::Dynamic` are similar to real life objects and are affected by
@@ -1552,7 +1507,6 @@ fn spawn_ball(mut commands: Commands) {
   ));
 }
 ```
-
 Avian is going to use the size of this collider to determine how much mass your
 body has.
 
@@ -1561,14 +1515,9 @@ entity's mass properties or interacting with other physical bodies.
 
 ```rust
 fn spawn_sensor(mut commands: Commands) {
-  commands.spawn((
-    RigidBody::Dynamic,
-    Collider::circle(0.5),
-    Sensor,
-  ));
+  commands.spawn((RigidBody::Dynamic, Collider::circle(0.5), Sensor));
 }
 ```
-
 For processing a large number of collisions at once you would use the
 `MessageReader`:
 
@@ -1582,7 +1531,6 @@ fn react_to_collisions(mut collision_events: MessageReader<CollisionStart>) {
   }
 }
 ```
-
 However if we want entity-specific collisions then we can use observers:
 
 ```rust
