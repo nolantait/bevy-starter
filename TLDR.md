@@ -1457,6 +1457,212 @@ impl FromWorld for ComponentB {
 }
 ```
 
+## Bevy Scene Notation (BSN)
+
+To spawn scenes inline its best to use the `bsn!` macro
+
+```rust
+#[derive(Component, Clone, Default)]
+struct Ship;
+
+#[derive(Component, Clone, Default)]
+struct Player {
+  score: usize,
+}
+
+fn spawn_scene(mut commands: Commands) {
+  commands.spawn_scene(bsn! {
+      Player
+      Ship
+  });
+}
+```
+We can make our own functions that return scenes:
+
+```rust
+fn button() -> impl Scene {
+  bsn! {
+      Button
+      Node { width: px(100) }
+  }
+}
+
+fn main() {
+  App::new()
+    .add_plugins(DefaultPlugins)
+    .add_systems(Startup, my_button.spawn())
+    .run();
+}
+```
+Field values can be arbitrary rust expressions:
+
+```rust
+fn increment_score(current_points: usize) -> impl Scene {
+  bsn! {
+      Player { score: {current_points + 10} }
+  }
+}
+```
+Two scenes that define the same component are combined, even down to the various
+fields:
+
+```rust
+fn button() -> impl Scene {
+  bsn! {
+      Button
+      Node { width: px(100) }
+  }
+}
+
+fn my_button() -> impl Scene {
+  bsn! {
+      button()
+      Node { height: px(100) }
+  }
+}
+```
+So `my_button` would create a `Node` with ___both___ a width and height of
+`100px`.
+
+Inside a scene list (`Children [...]`, `bsn_list![...]`), commas separate
+entities. Whitespace separates components on the same entity:
+
+```rust
+// One child with A and B
+Children [ A B ]
+
+// Two children, one with A, one with B
+Children [ A, B ]
+
+// Two children, clearer with parentheses
+Children [ (A B), C ]
+```
+
+We can make `SceneComponent` aggregates which must respond to `scene`:
+
+```rust
+#[derive(SceneComponent, Default, Clone)]
+struct Car {
+  boost: f32,
+}
+
+impl Car {
+  fn scene() -> impl Scene {
+    bsn! {
+      Transform { translation: Vec3 { x: 10. } }
+      Children [
+        FrontWheel,
+        BackWheel,
+      ]
+    }
+  }
+}
+```
+Scene components are spawned with the `@` prefix:
+
+```rust
+fn spawn_car(mut commands: Commands) {
+  commands.spawn_scene(bsn! {
+    @Car { boost: 100. }
+  });
+}
+```
+Scene components can also accept "props" for dynamic behavior. A props struct
+like `CarConfig` is passed into the scene function and lets you change what gets
+spawned:
+
+```rust
+#[derive(Default)]
+struct CarConfig {
+  wheels: WheelSize,
+}
+
+#[derive(Default)]
+enum WheelSize {
+  #[default]
+  Standard,
+  Wide,
+}
+
+fn car_with_config(config: CarConfig) -> impl Scene {
+  let wheels: Box<dyn Scene> = match config.wheels {
+    WheelSize::Standard => Box::new(bsn! { SlimWheels }),
+    WheelSize::Wide => Box::new(bsn! { WideWheels }),
+  };
+
+  bsn! {
+    #Car
+    wheels
+  }
+}
+```
+
+BSN supports [relationships](/bevy/relationships)
+
+```rust
+fn spawn_scene(mut commands: Commands) {
+  commands.spawn_scene(bsn! {
+    Player
+    Children [
+      Sword,
+      Shield,
+    ]
+  });
+}
+```
+It even works for custom relationships we define ourselves.
+
+BSN supports referencing entities via a provided `Name` component by prefixing a
+`#` as a shorthand.
+
+```rust
+fn player() -> impl Scene {
+  bsn! {
+      #Joe
+      Player
+  }
+}
+```
+This lets us reference entities from the same scene by name:
+
+```rust
+#[derive(Component, FromTemplate)]
+struct EmployedBy(Entity);
+
+fn boss() -> impl Scene {
+  bsn! {
+      #Boss
+      Children [
+          #Joe EmployedBy(#Boss)
+      ]
+  }
+}
+```
+This works the same way for lists:
+
+```rust
+#[derive(Component, FromTemplate)]
+struct ReportsTo(Entity);
+
+fn employees() -> impl SceneList {
+  bsn_list! [
+      (#Joe ReportsTo(#Jane)),
+      (#Jane ReportsTo(#Joe)),
+  ]
+}
+```
+Entities we make through scenes can be hooked up to observe events
+
+```rust
+fn button() -> impl Scene {
+  bsn! {
+      Node { width: px(100), height: px(50) }
+      on(|press: On<Pointer<Press>>| {
+          info!("button pressed!")
+      })
+  }
+}
+```
 ## Physics
 
 Bevy does not have a built-in physics engine. The most native to Bevy is
