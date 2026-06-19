@@ -1,6 +1,6 @@
 # Bevy Starter
 
-This repo is a minimal starter for Bevy `0.18`
+This repo is a minimal starter for Bevy `0.19`
 
 ## Inspiration
 
@@ -27,7 +27,7 @@ Depending on if you are building a 2D or 3D game you can set your Bevy features
 accordingly in `Cargo.toml` to reduce compile times. For 2D games you can use:
 
 ```toml
-bevy = { version = "0.18", default-features = false, features = ["2d"] }
+bevy = { version = "0.19", default-features = false, features = ["2d"] }
 ```
 
 See
