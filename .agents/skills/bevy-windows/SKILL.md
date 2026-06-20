@@ -3,7 +3,7 @@ name: bevy-windows
 description: Reference for Bevy windows — Window component, physical vs logical size, resolution, cursors, multi-window, events, screenshots, and reactive rendering.
 metadata:
   crate: bevy_window
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Window component

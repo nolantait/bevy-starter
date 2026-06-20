@@ -3,7 +3,7 @@ name: bevy-events
 description: Reference for events, messages, and observers in Bevy — Message/MessageReader/MessageWriter, Event/EntityEvent, triggers, observers, and propagation.
 metadata:
   crate: bevy_ecs
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Two kinds of events
@@ -100,7 +100,7 @@ The second generic `B` in `On<E, B>` acts as OR filter: `On<Add, (Enemy, Person)
 
 ```rust
 #[derive(EntityEvent)]
-#[entity_event(auto_propagate, propagate = &'static ChildOf)]
+#[entity_event(propagate, auto_propagate)]
 struct LocationTravelled {
   #[event_target]
   ship: Entity,

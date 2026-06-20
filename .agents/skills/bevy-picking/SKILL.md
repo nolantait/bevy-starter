@@ -3,7 +3,7 @@ name: bevy-picking
 description: Reference for Bevy's picking system — pointer events, backends, hover/click/drag observers, sprite picking, UI picking, and mesh picking.
 metadata:
   crate: bevy_picking
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Core concept

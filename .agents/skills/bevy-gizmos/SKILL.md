@@ -3,7 +3,7 @@ name: bevy-gizmos
 description: Reference for Bevy gizmos — immediate-mode visual debugging, GizmoPlugin, Gizmos system param, retained GizmoAsset, config groups, and line styles.
 metadata:
   crate: bevy_gizmos
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Setup

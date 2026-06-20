@@ -3,7 +3,7 @@ name: bevy-reflection
 description: Reference for Bevy's reflection system — Reflect derive, dynamic field access, serialization, trait reflection, and scenes.
 metadata:
   crate: bevy_reflect
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Basics
@@ -82,4 +82,4 @@ let my_trait: &dyn DoThing = reflect_do_thing.get(&*reflect_value).unwrap();
 
 ## Scenes
 
-Reflection powers scene serialization. Register types with `register_type`, then `DynamicScene::from_world(world).serialize(&type_registry)` to produce RON.
+Reflection powers scene serialization. Register types with `register_type`, then `DynamicWorld::from_world(world).serialize(&type_registry)` to produce RON.

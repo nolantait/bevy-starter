@@ -3,12 +3,12 @@ name: bevy-input
 description: Reference for handling input in Bevy — keyboard, mouse, touch, gamepad, events vs resources, physical vs logical keys, and enhanced input.
 metadata:
   crate: bevy_input
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Two approaches
 
-1. **Events** — `EventReader<T>` for reacting to any input of a type
+1. **Events** — `MessageReader<T>` for reacting to any input of a type
 2. **Resources** — `ButtonInput<T>`, `Axis<T>`, `Touches`, `Gamepads` for specific state queries
 
 ## Input resources
@@ -56,9 +56,9 @@ Mouse motion, cursor, wheel, gestures — read via `EventReader`:
 
 ```rust
 fn mouse_events(
-  mut motion: EventReader<MouseMotion>,
-  mut cursor: EventReader<CursorMoved>,
-  mut wheel: EventReader<MouseWheel>,
+  mut motion: MessageReader<MouseMotion>,
+  mut cursor: MessageReader<CursorMoved>,
+  mut wheel: MessageReader<MouseWheel>,
 ) {
   for ev in motion.read() { }
   for ev in cursor.read() { }
@@ -109,8 +109,8 @@ if ctrl && shift && input.just_pressed(KeyCode::KeyA) { }
 Use observers to avoid scheduling issues with `FixedUpdate`:
 
 ```rust
-fn apply_movement(trigger: Trigger<Fired<Move>>, mut players: Query<&mut Transform>) {
-  let mut t = players.get_mut(trigger.target()).unwrap();
+fn apply_movement(trigger: On<Fire<Move>>, mut players: Query<&mut Transform>) {
+  let mut t = players.get_mut(trigger.context).unwrap();
   t.translation += trigger.value.extend(0.0);
 }
 ```

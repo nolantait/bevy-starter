@@ -3,7 +3,7 @@ name: bevy-audio
 description: Reference for playing and controlling audio in Bevy — AudioPlayer, AudioSink, spatial audio, volume, and playback settings.
 metadata:
   crate: bevy_audio
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Core components

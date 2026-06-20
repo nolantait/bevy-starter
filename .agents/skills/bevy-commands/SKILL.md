@@ -3,7 +3,7 @@ name: bevy-commands
 description: Reference for Bevy Commands — spawning/despawning entities, inserting/removing components, custom commands, trait extensions, and testing.
 metadata:
   crate: bevy_ecs
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Basics

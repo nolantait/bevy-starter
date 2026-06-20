@@ -3,7 +3,7 @@ name: bevy-plugins
 description: Reference for Bevy plugins — function plugins, Plugin trait, life-cycle, ordering, configuration, PluginGroup, DefaultPlugins, and MinimalPlugins.
 metadata:
   crate: bevy_app
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Function plugin

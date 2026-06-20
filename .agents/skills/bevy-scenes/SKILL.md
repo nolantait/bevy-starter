@@ -1,21 +1,20 @@
 ---
 name: bevy-scenes
-description: Reference for Bevy scenes — saving and loading entity/component snapshots via reflection, DynamicScene, SceneSpawner, and DynamicSceneRoot.
+description: Reference for Bevy scenes — saving and loading entity/component snapshots via reflection, DynamicWorld, WorldInstanceSpawner, and DynamicWorldRoot.
 metadata:
   crate: bevy_scene
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Scene types
 
-- `Scene` — contains its own `World`, writes to your game's world
-- `DynamicScene` — serializable representation (no own world), stores `Vec<Box<dyn PartialReflect>>` resources + `Vec<DynamicEntity>` entities
+- `DynamicWorld` — serializable representation (no own world), stores `Vec<Box<dyn PartialReflect>>` resources + `Vec<DynamicEntity>` entities
 
 ## Saving a scene
 
 ```rust
 fn save_scene(world: &mut World) {
-  let scene = DynamicScene::from_world(world);
+  let scene = DynamicWorld::from_world(world);
   let type_registry = world.resource::<AppTypeRegistry>();
   let reg = type_registry.read();
   let serialized = scene.serialize(&reg).unwrap();
@@ -28,21 +27,21 @@ fn save_scene(world: &mut World) {
 Three ways:
 
 ```rust
-// 1. DynamicSceneRoot component
+// 1. DynamicWorldRoot component
 fn load(asset_server: Res<AssetServer>, mut commands: Commands) {
-  commands.spawn(DynamicSceneRoot(asset_server.load("scene.scn.ron")));
+  commands.spawn(DynamicWorldRoot(asset_server.load("scene.scn.ron")));
 }
 
-// 2. SceneSpawner::spawn_dynamic
-// 3. DynamicSceneBuilder
+// 2. WorldInstanceSpawner::spawn_dynamic
+// 3. DynamicWorldBuilder
 ```
 
 ## Scene events
 
-`SceneInstanceReady` fires when the scene is fully loaded. `SceneInstance` component is added to the root entity:
+`WorldInstanceReady` fires when the scene is fully loaded. `SceneInstance` component is added to the root entity:
 
 ```rust
-fn on_loaded(mut spawner: ResMut<SceneSpawner>, query: Query<&SceneInstance>) {
+fn on_loaded(mut spawner: ResMut<WorldInstanceSpawner>, query: Query<&SceneInstance>) {
   for instance in &query {
     spawner.despawn_instance_sync(world, instance);
   }

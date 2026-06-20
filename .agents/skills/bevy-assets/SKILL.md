@@ -3,7 +3,7 @@ name: bevy-assets
 description: Reference for loading, managing, and tracking assets in Bevy — AssetServer, handles, loading states, events, custom loaders, and hot reloading.
 metadata:
   crate: bevy_asset
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Core resources
@@ -35,7 +35,7 @@ fn spawn(mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMat
 | `png`, `jpg`, `webp`, `ktx2`, `bmp`, `gif`, `tga`, `tiff` | `Image` |
 | `mp3`, `flac`, `ogg`, `wav` | `AudioSource` |
 | `gltf`, `glb` | `Gltf` (use `GltfAssetLabel::Scene(0)` for a scene) |
-| `scn`, `scn.ron` | `DynamicScene` |
+| `scn`, `scn.ron` | `DynamicWorld` |
 
 ## Loading 3D models
 

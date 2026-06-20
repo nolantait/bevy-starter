@@ -3,7 +3,7 @@ name: bevy-rendering
 description: Reference for Bevy's rendering pipeline — wgpu, render graph, extract/prepare/queue/draw stages, meshes, materials, lighting, and text rendering.
 metadata:
   crate: bevy_render
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Graphics stack

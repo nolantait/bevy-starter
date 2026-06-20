@@ -3,7 +3,7 @@ name: bevy-ui
 description: Reference for Bevy UI — Node layout (Flexbox/CSS Grid), Val types, text, colors, buttons, interaction, scrolling, and relative cursor position.
 metadata:
   crate: bevy_ui
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Core concept

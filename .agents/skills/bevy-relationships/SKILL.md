@@ -3,7 +3,7 @@ name: bevy-relationships
 description: Reference for Bevy entity relationships — ChildOf/Children hierarchy, custom relationships with Relationship/RelationshipTarget, spawning children, and traversal.
 metadata:
   crate: bevy_ecs
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Built-in parent/child

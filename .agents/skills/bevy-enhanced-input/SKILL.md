@@ -3,14 +3,14 @@ name: bevy-enhanced-input
 description: Reference for bevy_enhanced_input — observer-based input manager with actions, contexts, bindings, conditions, modifiers, presets, and mocking.
 metadata:
   crate: bevy_enhanced_input
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Setup
 
 ```toml
 [dependencies]
-bevy_enhanced_input = "0.25"
+bevy_enhanced_input = "0.26"
 ```
 
 ```rust

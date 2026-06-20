@@ -3,15 +3,15 @@ name: avian
 description: Reference for Avian physics engine — rigid bodies, colliders, joints, spatial queries, collision events, character controllers, and debug rendering.
 metadata:
   crate: avian3d
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Setup
 
 ```toml
 [dependencies]
-avian2d = "0.6"   # 2D
-avian3d = "0.6"   # 3D
+avian2d = "0.7"   # 2D
+avian3d = "0.7"   # 3D
 ```
 
 ```rust

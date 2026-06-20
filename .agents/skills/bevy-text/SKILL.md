@@ -3,7 +3,7 @@ name: bevy-text
 description: Reference for text rendering in Bevy — Text vs Text2d, styling, text spans, changing text at runtime, clicking text, and font rendering.
 metadata:
   crate: bevy_text
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Text vs Text2d
@@ -75,4 +75,4 @@ commands.spawn(Text2d::new("Click me")).observe(handle_click);
 
 Supported: `ttf`, `otf`. Default font: Fira Mono. Load via `AssetServer`.
 
-Bevy 0.18+ supports OpenType font features.
+Bevy 0.19+ supports OpenType font features.

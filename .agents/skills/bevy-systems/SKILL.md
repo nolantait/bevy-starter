@@ -3,7 +3,7 @@ name: bevy-systems
 description: Reference for Bevy systems — scheduling, ordering, system parameters, ParamSet, exclusive systems, fallibility, custom system params, and run conditions.
 metadata:
   crate: bevy_ecs
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## System basics

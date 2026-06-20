@@ -3,7 +3,7 @@ name: bevy-timers
 description: Reference for Bevy timers — Timer as resource, component, or Local; tick, finished/just_finished, TimerMode::Once vs Repeat.
 metadata:
   crate: bevy_time
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Timer modes

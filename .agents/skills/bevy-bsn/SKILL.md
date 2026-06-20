@@ -3,7 +3,7 @@ name: bevy-bsn
 description: Reference for Bevy Scene Notation (BSN) — the bsn! macro for defining inline scenes with components, children, relationships, observers, and dynamic props.
 metadata:
   crate: bevy_scene
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Basic usage

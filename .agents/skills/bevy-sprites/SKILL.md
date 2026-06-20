@@ -3,7 +3,7 @@ name: bevy-sprites
 description: Reference for Bevy sprites — rendering images, custom size, anchors, z-ordering, sprite sheets, texture atlases, pixel-perfect rendering, and bounding boxes.
 metadata:
   crate: bevy_sprite
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Basic sprite

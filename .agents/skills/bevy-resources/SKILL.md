@@ -3,7 +3,7 @@ name: bevy-resources
 description: Reference for Bevy resources — defining, inserting, initializing, reading/writing, and removing global singleton data.
 metadata:
   crate: bevy_ecs
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Defining a resource

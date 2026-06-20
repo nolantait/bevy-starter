@@ -3,7 +3,7 @@ name: bevy-queries
 description: Reference for writing Bevy ECS queries — Query<D, F>, Single, filters, component access, iteration patterns, lenses, disjointed access, and testing.
 metadata:
   crate: bevy_ecs
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Basics

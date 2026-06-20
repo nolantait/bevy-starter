@@ -3,7 +3,7 @@ name: bevy-cameras
 description: Reference for cameras in Bevy — Camera2d, Camera3d, viewports, projection, render layers, mouse-to-world, and free camera controllers.
 metadata:
   crate: bevy_camera
-  bevy: "0.18"
+  bevy: "0.19"
 ---
 
 ## Creating cameras
