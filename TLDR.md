@@ -468,7 +468,7 @@ assets from a particular `AssetSource`, usually the filesystem.
 All assets follow the same general process:
 
 1. We register a new `Asset<T>` type if its custom
-2. We Register an `AssetLoader` for that asset if its custom
+2. We register an `AssetLoader` for that asset if its custom
 3. We add the asset to our `assets` folder
 4. Then we call `AssetServer::load` to get a `Handle<T>` to the asset
 
