@@ -24,6 +24,7 @@ struct PlayerDetected(Entity);
 
 ```rust
 app.add_message::<PlayerDetected>();
+app.add_message::<PlayerKilled>();
 ```
 
 ### Writing
@@ -42,11 +43,14 @@ fn react(mut messages: MessageReader<PlayerDetected>) {
 }
 ```
 
-Messages are double-buffered — systems see messages from the current and previous frame. Unconsumed messages are dropped after two frames.
+Messages are double-buffered — systems see messages from the current and previous frame. Unconsumed messages are cleaned up and dropped silently after two updates. To skip a system entirely when there are no new messages, use `PopulatedMessageReader<T>` or the `on_message::<T>` run condition.
 
 ## Events (immediate observers)
 
 ### Defining
+
+- `Event` — global event, defined with a `GlobalTrigger`
+- `EntityEvent` — entity-scoped event, defined with an `EntityTrigger`, or with a `PropagateEntityTrigger` when propagation is enabled
 
 ```rust
 #[derive(Event)]
@@ -98,23 +102,29 @@ The second generic `B` in `On<E, B>` acts as OR filter: `On<Add, (Enemy, Person)
 
 ## Event propagation
 
+Propagation is opt-in. With `auto_propagate` it happens automatically;
+otherwise an observer must call `On::propagate(true)`. The traversal defaults to
+`ChildOf` (child to parent) and can be changed with
+`propagate = &'static SomeRelationship`.
+
 ```rust
 #[derive(EntityEvent)]
-#[entity_event(propagate, auto_propagate)]
+#[entity_event(auto_propagate, propagate = &'static ChildOf)]
 struct LocationTravelled {
   #[event_target]
-  ship: Entity,
+  entity: Entity,
 }
 ```
 
-Propagates up through `ChildOf` hierarchy. Stops when chain ends or observer manually stops it.
+An `EntityEvent` with propagation enabled bubbles up its hierarchy, stopping
+when the chain ends or an observer manually stops it.
 
 ## Choosing messages vs events
 
 | | Events | Messages |
 |--|--------|----------|
 | Frequency | Infrequent | Frequent |
-| Latency | Immediate | Up to 1 frame |
+| Latency | Immediate with `World::trigger`; next sync point with `Commands::trigger` | Up to 1 frame |
 | Scope | World or Entity | World |
 | Ordering | No explicit order | Ordered |
 | Coupling | High | Low |

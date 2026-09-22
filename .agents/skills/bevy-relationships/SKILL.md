@@ -13,7 +13,13 @@ Two components kept in sync:
 - `ChildOf(Entity)` — the relationship, added to child entities
 - `Children(Vec<Entity>)` — the target, auto-maintained on parent
 
-Transform propagation: parent's `Transform`/`GlobalTransform` auto-propagates to children. Despawning parent removes all `ChildOf` components.
+The built-in hierarchy is wired into Bevy's transform and visibility
+propagation, so a parent's `Transform` and `Visibility` are inherited by its
+children automatically.
+
+`Children` is declared with `linked_spawn`: despawning the parent also despawns
+its children and their descendants. Use `detach_children` or
+`detach_all_children` first if you want to keep them alive.
 
 ### Spawning children
 
@@ -41,7 +47,12 @@ struct AttachedToShip(pub Entity);
 struct ShipAttachments(Vec<Entity>);
 ```
 
-`linked_spawn` auto-despawning children when parent is removed.
+The `RelationshipTarget` must hold a collection implementing
+`RelationshipSourceCollection` — e.g. `Vec<Entity>`, an entity hash set, or a
+single `Entity`. `linked_spawn` means despawning the entity holding the
+`RelationshipTarget` also despawns the entities holding the `Relationship`.
+Without it, those `Relationship` components are still removed, but the entities
+stay alive.
 
 ### Spawning with custom relationship
 

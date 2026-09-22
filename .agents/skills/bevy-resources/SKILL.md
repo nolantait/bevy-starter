@@ -13,7 +13,9 @@ metadata:
 struct Score(usize);
 ```
 
-Only one per type per `World`.
+A `Resource` is actually a `Component` that belongs to a singleton entity, so
+resources can be queried like any other component. There can only ever be one
+instance of a resource type per `World`.
 
 ## Adding resources
 

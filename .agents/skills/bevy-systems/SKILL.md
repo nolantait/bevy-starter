@@ -21,6 +21,36 @@ app.add_systems(Update, hello);
 app.add_systems(Update, (defend, attack));
 ```
 
+### Schedule labels
+
+Main labels:
+
+1. `Update` — runs once every loop
+2. `FixedUpdate` — runs once every fixed amount of time
+3. `Startup` — runs once at startup
+
+Other built-in labels, in order:
+
+1. `PreStartup`
+2. `Startup`
+3. `PostStartup`
+4. `First`
+5. `PreUpdate`
+6. `StateTransition`
+7. `RunFixedMainLoop` — runs the `FixedMain` schedules including `FixedUpdate`
+8. `Update`
+9. `SpawnScene`
+10. `PostUpdate`
+11. `Last`
+
+Each label identifies a `Schedule`, which holds the metadata and executor needed
+to run its systems. Bevy tries to run systems in parallel unless they have
+conflicting mutable data access; archetypes optimize this.
+
+`Commands` queue into a `CommandQueue` and are applied at a **sync point**: an
+`ApplyDeferred` system that Bevy inserts after command-producing systems that
+others depend on, as well as at the end of every schedule.
+
 ## Ordering
 
 ```rust

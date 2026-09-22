@@ -91,18 +91,35 @@ Children [ A, B ]
 Children [ (A B), C ]
 ```
 
+## Scene and SceneList
+
+A `bsn!` expression implements the `Scene` trait and describes a single root
+entity. A `bsn_list!` (or a scene list inside `Children [...]`) implements
+`SceneList`, where each entry becomes its own entity. Enums are special: BSN
+needs a default for every variant, which deriving `VariantDefaults` (or
+`FromTemplate`) generates as `default_{variant_lower}` methods.
+
 ## SceneComponent derive
 
-`#[derive(SceneComponent)]` aggregates components under a name with a `scene()` method:
+`#[derive(SceneComponent)]` aggregates components under a name with a `scene`
+method. A props struct is declared with `#[scene(Props)]` and passed into the
+scene function:
 
 ```rust
 #[derive(SceneComponent, Default, Clone)]
+#[scene(CarConfig)]
 struct Car { boost: f32 }
 
 impl Car {
-  fn scene() -> impl Scene {
+  fn scene(props: CarConfig) -> impl Scene {
+    let wheels: Box<dyn Scene> = match props.wheels {
+      WheelSize::Standard => Box::new(bsn! { SlimWheels }),
+      WheelSize::Wide => Box::new(bsn! { WideWheels }),
+    };
+
     bsn! {
       Transform { translation: Vec3 { x: 10. } }
+      wheels
       Children [
         FrontWheel,
         BackWheel,
@@ -112,33 +129,34 @@ impl Car {
 }
 ```
 
-Spawning with `@` prefix in `bsn!`:
+Spawning with the `@` prefix in `bsn!`. Props also use `@` to distinguish them
+from the component's own fields (`boost` here is a normal `Car` field, while
+`@wheels` is a prop consumed by `Car::scene`):
 
 ```rust
 fn spawn_car(mut commands: Commands) {
   commands.spawn_scene(bsn! {
-    @Car { boost: 100. }
+    @Car {
+      @wheels: WheelSize::Wide,
+      boost: 100.,
+    }
   });
 }
 ```
 
-## Dynamic props
-
-Pass a config struct to customize scene contents:
+## Props struct
 
 ```rust
 #[derive(Default)]
-struct CarConfig { wheels: WheelSize }
+struct CarConfig {
+  wheels: WheelSize,
+}
 
 #[derive(Default)]
-enum WheelSize { #[default] Standard, Wide }
-
-fn car_with_config(config: CarConfig) -> impl Scene {
-  let wheels: Box<dyn Scene> = match config.wheels {
-    WheelSize::Standard => Box::new(bsn! { SlimWheels }),
-    WheelSize::Wide => Box::new(bsn! { WideWheels }),
-  };
-  bsn! { #Car wheels }
+enum WheelSize {
+  #[default]
+  Standard,
+  Wide,
 }
 ```
 

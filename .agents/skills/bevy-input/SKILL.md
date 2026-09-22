@@ -8,27 +8,27 @@ metadata:
 
 ## Two approaches
 
-1. **Events** — `MessageReader<T>` for reacting to any input of a type
-2. **Resources** — `ButtonInput<T>`, `Axis<T>`, `Touches`, `Gamepads` for specific state queries
+1. **Messages** — read `MessageReader<T>` for input emitted by Bevy's input systems
+2. **Polling** — resources like `ButtonInput<T>` / `Touches`, or querying components like `Gamepad`
 
-## Input resources
+## Input types
 
-| Resource | Purpose |
-|----------|---------|
-| `ButtonInput<KeyCode>` | Keyboard keys |
-| `ButtonInput<MouseButton>` | Mouse buttons |
-| `Axis<GamepadAxis>` | Gamepad analog sticks/triggers |
-| `ButtonInput<GamepadButton>` | Gamepad buttons |
-| `Touches` | Touch state |
-| `Gamepads` | Connected gamepads |
+| Type | Description |
+|------|-------------|
+| `ButtonInput<T>` | A "press-able" input, such as `KeyCode` or `MouseButton` |
+| `Axis<T>` | Position data from certain input devices |
+| `Touches` | A collection of `Touch`es that have happened |
+| `TouchInput` | Messages representing touch-based input |
+| `Gamepad` | Component on each connected controller, holding its button/axis state |
+| `GamepadAxis` | Enum describing the axes available on a gamepad |
 
 ## ButtonInput methods
 
 | Method | Returns true |
 |--------|-------------|
 | `pressed(k)` | Between press and release |
-| `just_pressed(k)` | One frame after press |
-| `just_released(k)` | One frame after release |
+| `just_pressed(k)` | On the frame the press was processed |
+| `just_released(k)` | On the frame the release was processed |
 | `any_pressed([k1, k2])` | Any in list pressed |
 
 ## Keyboard
@@ -52,7 +52,7 @@ fn shoot(mouse: Res<ButtonInput<MouseButton>>) {
 }
 ```
 
-Mouse motion, cursor, wheel, gestures — read via `EventReader`:
+Mouse motion, cursor, wheel, gestures — read via `MessageReader`:
 
 ```rust
 fn mouse_events(
@@ -78,9 +78,13 @@ fn touch(touches: Res<Touches>) {
 
 ## Gamepad
 
+`Gamepad` is a component on each connected controller. Poll its own state, or
+use the `ButtonInput<GamepadButton>` / `Axis<GamepadAxis>` resources:
+
 ```rust
 fn gamepad(gamepads: Query<&Gamepad>, buttons: Res<ButtonInput<GamepadButton>>) {
   for pad in &gamepads {
+    if pad.just_pressed(GamepadButton::South) { }
     if buttons.just_pressed(GamepadButton::South) { }
   }
 }

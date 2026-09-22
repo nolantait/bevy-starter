@@ -8,14 +8,28 @@ metadata:
 
 ## Core concept
 
-`Pointer` is an abstract representation of user input at a screen location. **Backends** read `PointerLocation` components and produce `PointerHits` events. The picking pipeline handles the rest.
+`Pointer` is an abstract representation of user input at a screen location. **Backends** read `PointerLocation` components and produce `PointerHits` events. An app can have multiple backends active at once.
+
+```rust
+pub struct PointerHits {
+  pub pointer: PointerId,
+  pub picks: Vec<(Entity, HitData)>,
+  pub order: f32,
+}
+```
+
+A pointer's location targets a `NormalizedRenderTarget`, which can be one of:
+Windows, Images, or GPU Texture Views.
+
+`PointerHits` feed the generic picking plugins, which produce higher-level
+`Pointer<E>` events that we react to with an `Observer` or `MessageReader`.
 
 ## Default picking plugins
 
 `DefaultPickingPlugins` (included with `DefaultPlugins` when `bevy_picking` feature enabled) contains:
 
 - `InteractionPlugin` — generates pointer events, handles bubbling
-- `PickingPlugin` — manages picking state, produces higher-level events
+- `PickingPlugin` — sets up core picking infrastructure and `PickingSettings`
 - `PointerInputPlugin` — mouse and touch events
 
 ## Pointer event types
@@ -48,7 +62,8 @@ commands.spawn((
 
 ## Picking UI
 
-UI nodes are pickable by default. Attach observers to specific elements:
+UI nodes are pickable by default. Sprites need a `Pickable` component to opt in.
+Attach observers to specific elements:
 
 ```rust
 commands.spawn(button()).observe(|click: On<Pointer<Click>>| {
@@ -87,4 +102,21 @@ Set `MeshPickingSettings::require_markers` to true for opt-in mesh picking.
 4. Build `HoverMap` (topmost entity wins)
 5. Generate higher-level `Pointer<E>` events
 
-Within a frame: `Out`/`DragLeave` first, then `DragEnter`/`Over`, then movement/press/drag events in any order.
+Within a frame:
+
+1. `Out` -> `Leave` -> `DragLeave`
+2. `DragEnter` -> `Enter` -> `Over`
+
+Then any of the following in any order:
+
+- Movement: `DragStart` -> `Drag` -> `DragOver` -> `Move`
+- Button press: `Press` or `Click` -> `Release` -> `DragDrop` -> `DragEnd` -> `DragLeave`
+- Cancellation: `Cancel`
+
+Between frames the interaction state machine manages:
+
+- Move over target: `Over` -> `Enter` -> `Move` -> `Leave` -> `Out`
+- Press on target: `Press` -> `Click` -> `Release`
+- Drag target: `DragStart` -> `Drag` -> `DragEnd`
+- Drag something over target: `DragEnter` -> `DragOver` -> `DragDrop` -> `DragLeave`
+- Cancel: no other events follow `Cancel` for that pointer.

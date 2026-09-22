@@ -19,9 +19,15 @@ metadata:
 // In scene
 commands.spawn((
   Text2d::new("Hello"),
-  TextColor(Color::WHITE),
-  TextFont::from(font_handle).with_font_size(60.),
-  TextLayout::new_with_justify(Justify::Center),
+  TextFont::from(font_handle).with_font_size(FontSize::Px(60.0)),
+  TextColor::WHITE,
+  // `TextLayout::justify` only aligns the lines *within* the block of text.
+  TextLayout::justify(Justify::Center),
+  // Wrapping and truncation are controlled by `TextBounds`, not by the `Node`.
+  TextBounds::new_horizontal(300.0),
+  // `Anchor` controls where the text sits relative to its `Transform`.
+  Anchor::TOP_LEFT,
+  Text2dShadow::default(),
 ));
 
 // In UI
@@ -35,8 +41,11 @@ commands.spawn((
 ## Styling components
 
 - `TextLayout` — alignment, line break behavior
-- `TextFont` — font, font size
+- `TextFont` — font, font size (`with_font_size(FontSize::Px(..))`)
 - `TextColor` — color override
+- `TextBounds` — wrapping/truncation (not the `Node`)
+- `Anchor` — where text sits relative to its `Transform` (`Text2d`)
+- `Text2dShadow` — shadow rendering for `Text2d`
 
 ## Multi-style text (TextSpan)
 

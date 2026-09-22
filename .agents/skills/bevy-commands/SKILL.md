@@ -8,7 +8,10 @@ metadata:
 
 ## Basics
 
-`Commands` is a system parameter that queues mutations. They execute together at the next schedule transition (via `ApplyDeferred`).
+`Commands` is a system parameter that queues mutations into a `CommandQueue`.
+Bevy applies them at a **sync point**: an `ApplyDeferred` system inserted after
+command-producing systems that others depend on, as well as at the end of every
+schedule.
 
 ```rust
 fn spawn(mut commands: Commands) {
@@ -33,6 +36,43 @@ struct Player;
 // now: commands.spawn(Player) auto-adds Transform
 ```
 
+A bare `#[require(Foo)]` uses `Foo::default()`, so `Foo` must implement
+`Default`. If you provide a constructor instead, `Default` is not required.
+Required components are resolved **recursively**.
+
+## Component lifecycle hooks
+
+Components have five life-cycle hooks for side effects that **must** happen:
+
+1. `#[component(on_add = ...)]`
+2. `#[component(on_insert = ...)]`
+3. `#[component(on_discard = ...)]`
+4. `#[component(on_remove = ...)]`
+5. `#[component(on_despawn = ...)]`
+
+The hook systems take a `DeferredWorld` and a `HookContext`:
+
+```rust
+use bevy::ecs::lifecycle::HookContext;
+use bevy::ecs::world::DeferredWorld;
+
+#[derive(Component, Default)]
+#[component(on_add = on_ship_added)]
+enum Ship {
+  Destroyer,
+  Frigate,
+  #[default]
+  Scout,
+}
+
+fn on_ship_added(mut world: DeferredWorld, context: HookContext) {
+  world
+    .commands()
+    .entity(context.entity)
+    .insert(Position { x: 0, y: 0 });
+}
+```
+
 ## EntityCommands chaining
 
 `spawn`/`spawn_empty` return `EntityCommands` for chaining:
@@ -54,7 +94,8 @@ for entity in &query {
 
 ## Commands are deferred
 
-Commands don't execute immediately — they're queued until the next `ApplyDeferred` system runs (typically at schedule boundaries).
+Commands don't execute immediately — they're queued until the next sync point,
+where Bevy runs its `ApplyDeferred` system.
 
 ## Custom commands
 

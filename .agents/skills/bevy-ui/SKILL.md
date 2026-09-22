@@ -27,6 +27,13 @@ commands.spawn((
 ));
 ```
 
+All children set their `UiTransform` relative to their parent, so a child ends
+up laid out inside its parent. Never modify `UiTransform`/`UiGlobalTransform`
+directly; position nodes through the `Node` layout and style fields. `Node`
+fields include `direction` (`InlineDirection`), `border_radius`
+(`BorderRadius`), and `scrollbar_width` in addition to the usual flex/grid
+properties.
+
 ## Val types
 
 | Type | Description |
@@ -98,6 +105,13 @@ First node in `UiStack` is furthest, rendered first. Last node receives interact
 
 - `ZIndex` — local z-order within parent
 - `GlobalZIndex` — global z-order across all nodes
+
+## Widgets
+
+`bevy_ui_widgets` (buttons, checkboxes, sliders, radio groups, scrollbars,
+menus) is enabled by default as part of the `ui` feature collection. The larger
+styled and themed `bevy_feathers` set requires enabling the `bevy_feathers`
+feature.
 
 ## Relative cursor position
 

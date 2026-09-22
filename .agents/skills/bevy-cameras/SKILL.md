@@ -38,7 +38,8 @@ commands.spawn((Camera2d, Camera { viewport: Some(Viewport { .. }), ..default() 
 
 ## Coordinate system
 
-Right-handed: X→right, Y→up, Z→towards viewer. Default center is (0,0).
+Right-handed: X→right, Y→up, Z→coming out of the screen toward the viewer
+("forward" is -Z). Default screen center is (0,0).
 
 ## 2D camera movement
 
@@ -71,13 +72,22 @@ fn move_3d(input: Res<ButtonInput<KeyCode>>, time: Res<Time>, mut t: Single<&mut
 ## 3D mouse look
 
 ```rust
-fn look(mut mm: MessageReader<MouseMotion>, mut t: Single<&mut Transform, With<Camera>>, time: Res<Time>) {
-  let dt = time.delta_secs();
-  let sensitivity = Vec2::new(0.12, 0.10);
+use bevy::input::mouse::MouseMotion;
+
+fn look(mut mm: MessageReader<MouseMotion>, mut t: Single<&mut Transform, With<Camera>>) {
+  let mouse_sensitivity = Vec2::new(0.12, 0.10);
+
   for motion in mm.read() {
-    t.rotate_y(-motion.delta.x * dt * sensitivity.x);
+    let delta_yaw = -motion.delta.x * mouse_sensitivity.x;
+    let delta_pitch = -motion.delta.y * mouse_sensitivity.y;
+
+    // Yaw turns left/right (global)
+    t.rotate_y(delta_yaw);
+
+    // Pitch looks up/down (local), clamped to the poles
+    const PITCH_LIMIT: f32 = std::f32::consts::FRAC_PI_2 - 0.01;
     let (yaw, pitch, roll) = t.rotation.to_euler(EulerRot::YXZ);
-    let pitch = (pitch - motion.delta.y * dt * sensitivity.y).clamp(-FRAC_PI_2 + 0.01, FRAC_PI_2 - 0.01);
+    let pitch = (pitch + delta_pitch).clamp(-PITCH_LIMIT, PITCH_LIMIT);
     t.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, roll);
   }
 }

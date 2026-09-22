@@ -38,7 +38,7 @@ Query<&Transform, (With<Player>, With<Living>)>  // Transform on entities with P
 | Parameter | Behavior |
 |-----------|----------|
 | `Single<D, F>` | Exactly one match, or system skipped |
-| `Option<Single<D, F>>` | Zero or one match |
+| `Option<Single<D, F>>` | Zero or one match; yields `None` if there are none or more than one |
 | `Populated<D, F>` | One or more matches, skips if none |
 
 ```rust
@@ -60,6 +60,7 @@ fn destructure(s: Single<(&mut Pos, &Vel), With<Player>>) {
 | `Ref<T>` | Readonly with change detection methods |
 | `Has<T>` | Returns `bool` if entity has component |
 | `Entity` | The entity ID |
+| `SpawnDetails` | When paired with the `Spawned` filter, gives access to when and where an entity was spawned |
 
 ### AnyOf
 
@@ -99,13 +100,15 @@ fn lookup(players: Query<Entity, With<Player>>, transforms: Query<&Transform>) {
 |--------|-------------|
 | `With<T>` | Only entities with component T |
 | `Without<T>` | Only entities without component T |
-| `Or<F>` | Union of filters in tuple |
-| `Changed<T>` | Component changed this tick |
-| `Added<T>` | Component added this tick |
+| `Or<F>` | Checks if any filters in the tuple `F` apply |
+| `Changed<T>` | Components of type T that changed since the system last ran |
+| `Added<T>` | Components of type T that were added since the system last ran |
+| `Spawned` | Only entities that were spawned since the system last ran |
 
 ```rust
 Query<&Transform, (With<Player>, Without<Dead>)>
 Query<Player, Added<Player>>  // equivalent to Ref<Player> + is_added check
+Query<(&Player, SpawnDetails), Spawned>  // newly spawned entities
 ```
 
 ## Retrieval methods
@@ -113,17 +116,18 @@ Query<Player, Added<Player>>  // equivalent to Ref<Player> + is_added check
 | Method | Description |
 |--------|-------------|
 | `iter` / `iter_mut` | Iterator over all matches |
-| `for_each` | Parallel-capable closure (faster with fragmented archetypes) |
-| `iter_many` / `iter_many_mut` | Iterate over specific entity list |
-| `iter_combinations` | All K-combinations of matches |
-| `par_iter` | Parallel iterator |
-| `get` / `get_mut` | Fetch single entity's components by Entity |
-| `get_component<T>` | Fetch specific component for an entity |
-| `many` / `many_mut` | Fetch multiple by entity list |
-| `single` / `single_mut` | Expect exactly one match (returns `Result`) |
-| `get_single` / `get_single_mut` | Safe version returning `Result` |
+| `iter_many` / `iter_many_mut` | Iterate over only the items matching a list of entities |
+| `iter_combinations` / `iter_combinations_mut` | All K-combinations of matches |
+| `contiguous_iter` / `contiguous_iter_mut` | Receives whole table slices at once, enabling SIMD optimizations |
+| `par_iter` / `par_iter_mut` | Parallel iterator |
+| `get` / `get_mut` | Fetch a single entity's components by `Entity` |
+| `get_many` / `get_many_mut` | Fetch items for each entity in a fixed-size array |
+| `single` / `single_mut` | The only query item as a `Result`, `Err` unless there is exactly one |
 | `is_empty` | Check if query has matches |
-| `contains` | Check if query contains specific entity |
+| `contains` | Check if query contains a specific entity |
+
+Every method that returns query items has a `*_mut` variant; the `*_mut` methods
+require a mutable `Query` parameter.
 
 ```rust
 // Iteration

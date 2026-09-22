@@ -17,6 +17,12 @@ fn load(mut image: ResMut<MyImage>, server: Res<AssetServer>) {
 }
 ```
 
+By default Bevy looks in the `assets` folder. The base directory depends on how
+the app is run: `cargo run` sets `CARGO_MANIFEST_DIR` to the crate root, while a
+standalone executable falls back to the directory containing the executable.
+Override with the `file_path` field on `AssetPlugin`, or the `BEVY_ASSET_ROOT` /
+`CARGO_MANIFEST_DIR` environment variables.
+
 ## Creating assets procedurally
 
 ```rust

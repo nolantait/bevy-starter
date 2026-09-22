@@ -72,7 +72,7 @@ UI text (`Text`) or scene text (`Text2d`):
 commands.spawn((
   Text2d::new("Hello"),
   TextColor(Color::WHITE),
-  TextFont { font_size: 60.0, ..default() },
-  TextLayout::new_with_justify(Justify::Center),
+  TextFont::from(font).with_font_size(FontSize::Px(60.0)),
+  TextLayout::justify(Justify::Center),
 ));
 ```
