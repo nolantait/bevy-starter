@@ -274,7 +274,7 @@ fn main() {
 | **PbrPlugin** | `bevy_pbr` | Adds physical based rendering with `StandardMaterial` etc |
 | **PipelinedRenderingPlugin** | `bevy_render` | Adds pipelined rendering |
 | **PostProcessPlugin** | `bevy_post_process` | Adds post processing effects |
-| **RenderDebugOverlayPlugin** | `bevy_dev_tools` + `bevy_pbr` | Adds a rendering debug overlay to visualize various renderer buffers |
+| **RenderDebugOverlayPlugin** | `render_dev_tools` | Adds a rendering debug overlay to visualize various renderer buffers |
 | **RenderPlugin** | `bevy_render` | Sets up rendering backend powered by `wgpu` crate |
 | **ScenePlugin** | `bevy_scene` | Adds support for spawning Bevy Scenes |
 | **ScheduleRunnerPlugin** | `!bevy_window` | Configures an `App` to run its `Schedule` according to a given `RunMode` (added when windowing is disabled) |
@@ -404,9 +404,10 @@ provides an API with the following methods:
 | Method | Description |
 | --- | --- |
 | `iter` / `iter_mut` | returns an iterator over all items |
-| `iter_many` / `iter_many_mut` | iterates over only the items matching a list of entities |
+| `iter_many` / `iter_many_mut` | iterates over only the items matching a list of entities, yielding a `Result` for each entity |
 | `iter_combinations` / `iter_combinations_mut` | returns an iterator over all combinations of a specified number of items |
 | `contiguous_iter` / `contiguous_iter_mut` | returns an iterator that receives the whole table slice at once, allowing SIMD optimizations to work |
+| `contiguous_par_iter` / `contiguous_par_iter_mut` | returns a parallel iterator that receives whole table slices at once, allowing SIMD optimizations to work |
 | `par_iter` / `par_iter_mut` | returns a parallel iterator |
 | `get` / `get_mut` | returns a query item for a given entity |
 | `get_many` / `get_many_mut` | returns query items for each entity in a fixed-size array |
@@ -452,12 +453,16 @@ fn attack_selected_enemies(
   mut query: Query<&mut Health>,
   selected: Res<Selection>,
 ) {
-  let mut iter = query.iter_many_mut(&selected.enemies);
+  let mut iter = query.iter_many_mut(&selected.enemies).matched();
   while let Some(mut health) = iter.fetch_next() {
     health.0 -= ATTACK_DAMAGE;
   }
 }
 ```
+
+`iter_many`/`iter_many_mut` yield a `Result` for each entity, so missing or
+despawned entities don't silently disappear. Chain `.matched()` to skip entities
+that don't match the query.
 
 ## Assets
 
@@ -585,7 +590,7 @@ These events are consumed by an `Observer` which is a callback system that
 __must__ take an `On` system parameter as the __first__ argument:
 
 ```rust
-fn on_respawn(event: On<Add, Enemy>, query: Query<(&Enemy, &Position)>) {
+fn on_respawn(event: On<Add<Enemy>>, query: Query<(&Enemy, &Position)>) {
   let (enemy, position) = query.get(event.entity).unwrap();
   println!("Enemy was respawned at {:?}", position);
 }
@@ -934,6 +939,44 @@ fn rotate_camera_to_mouse(
 }
 ```
 
+Bevy ships optional camera controllers behind cargo features: `free_camera`,
+`pan_camera` and `pan_orbit_camera`. `PanOrbitCamera` orbits, pans and zooms
+around the point under the cursor, which it finds through picking. It ships
+without an input mapping so we can wire it up ourselves.
+
+```rust
+use crate::pan_orbit_input::CustomInputPlugin;
+use bevy::{
+  camera_controller::pan_orbit_camera::prelude::*,
+  prelude::*,
+};
+
+fn main() {
+  App::new()
+    .add_plugins((
+      DefaultPlugins,
+      // The controller uses picking to find the point under the cursor
+      MeshPickingPlugin,
+      DefaultPanOrbitCameraPlugins,
+      // The controller ships without an input mapping, so we provide one
+      CustomInputPlugin,
+    ))
+    .add_systems(Startup, (spawn_camera, spawn_cube))
+    .run();
+}
+
+#[derive(Component)]
+#[require(Camera3d, PanOrbitCamera)]
+struct MainCamera;
+
+fn spawn_camera(mut commands: Commands) {
+  commands.spawn((
+    MainCamera,
+    Transform::from_xyz(0.0, 1.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+  ));
+}
+```
+
 ## UI
 
 Bevy's UI system is also done through its ECS.
@@ -1021,6 +1064,11 @@ parent, so the `Node` we spawned as a child will be placed in the center
 of its parent. You should never modify `UiTransform`/`UiGlobalTransform`
 directly; position nodes through the `Node` layout and style fields.
 
+Values are expressed with the `Val` enum, including `Val::Px`, `Val::Percent`,
+`Val::Vw`, `Val::Vh`, `Val::VMin`, `Val::VMax`, `Val::Em` (relative to the
+node's own font size, `EmSize`) and `Val::Rem` (relative to the root font size,
+`RemSize`).
+
 Text can be rendered in two separate ways:
 
 1. As part of our game with `Text2d`
@@ -1066,7 +1114,14 @@ fn spawn_in_scene(mut commands: Commands, assets: Res<AssetServer>) {
   ));
 }
 ```
-Adding interactivity happens through an `Interaction` component.
+For text entry, spawn `EditableText` together with a `TextInput` from
+`bevy_ui_widgets`. `EditableText` on its own is state-only, while `TextInput`
+adds the working widget on top.
+
+Adding interactivity is handled by the picking backend, which tracks hover and
+press state with the `picking::hover::Hovered` and `ui::Pressed` components.
+`Interaction` is a deprecated alias for `DeprecatedInteraction`, so prefer the
+picking-based components in new code.
 
 ```rust
 use bevy::color::palettes::css::*;
@@ -1074,30 +1129,32 @@ use bevy::color::palettes::css::*;
 fn button_system(
   mut interactions: Query<
     (
-      &Interaction,
+      &Hovered,
+      Has<Pressed>,
       &mut BackgroundColor,
       &mut BorderColor,
       &Children,
     ),
-    (Changed<Interaction>, With<Button>),
+    With<Button>,
   >,
   mut texts: Query<&mut Text>,
 ) {
-  for (interaction, mut color, mut border_color, children) in &mut interactions
+  for (hovered, pressed, mut color, mut border_color, children) in
+    &mut interactions
   {
     if let Ok(mut text) = texts.get_mut(children[0]) {
-      match *interaction {
-        Interaction::Pressed => {
+      match (hovered.get(), pressed) {
+        (_, true) => {
           text.0 = "Press".to_string();
           *color = PRESSED_BUTTON.into();
           border_color.set_all(BLUE);
         }
-        Interaction::Hovered => {
+        (true, false) => {
           text.0 = "Hover".to_string();
           *color = HOVERED_BUTTON.into();
           border_color.set_all(WHITE);
         }
-        Interaction::None => {
+        (false, false) => {
           text.0 = "Button".to_string();
           *color = NORMAL_BUTTON.into();
           border_color.set_all(BLACK);
@@ -1115,9 +1172,10 @@ However the first node is also the last to receive any interactions so it's
 actually the final node that would be interacted with.
 
 Bevy ships first-party widgets. `bevy_ui_widgets` (buttons, checkboxes, sliders,
-radio groups, scrollbars, menus) is enabled by default as part of the `ui`
-feature collection, while the larger styled and themed `bevy_feathers` set
-requires enabling the `bevy_feathers` feature.
+radio groups, scrollbars, menus, popovers, lists, tabs and text inputs) is
+enabled by default as part of the `ui` feature collection, while the larger
+styled and themed `bevy_feathers` set requires enabling the `bevy_feathers`
+feature.
 
 ## Picking
 
@@ -1141,10 +1199,15 @@ pub struct PointerHits {
 ```
 
 These `PointerHits` are then used by the generic picking plugins to produce
-higher level `Pointer<E>` events which we can react to with either an `Observer`
-or `MessageReader`.
+higher level pointer events such as `PointerPress` or `PointerDrag`, which we can
+react to with either an `Observer` or `MessageReader`.
 
-A pointer's location targets a `NormalizedRenderTarget`, which can be one of:
+Every pointer interaction has its own concrete event type rather than being
+wrapped in a generic one. Each event carries a `pointer: Pointer` field with
+metadata such as its `id`, `target` and `position`. A handler can work for any
+pointer event by taking the `PointerEvent` trait.
+
+A pointer's target is a `NormalizedRenderTarget`, which can be one of:
 
 1. Windows
 2. Images
@@ -1169,23 +1232,29 @@ default. To enable picking meshes we need to add the `MeshPickingPlugin`.
 
 Within a single frame, the order of picking events is:
 
-1. `Out` -> `Leave` -> `DragLeave`
-2. `DragEnter` -> `Enter` -> `Over`
+1. `PointerOut` -> `PointerLeave` -> `PointerDragLeave`
+2. `PointerDragEnter` -> `PointerEnter` -> `PointerOver`
 
 Then any of the following can happen in any order:
 
-- For each movement: `DragStart` -> `Drag` -> `DragOver` -> `Move`
-- For each button press: `Press` or `Click` -> `Release` -> `DragDrop` ->
-  `DragEnd` -> `DragLeave`
-- For each pointer cancellation: `Cancel`
+- For each movement: `PointerDragStart` -> `PointerDrag` -> `PointerDragOver` ->
+  `PointerMove`
+- For each button press: `PointerPress` or `PointerClick` -> `PointerRelease` ->
+  `PointerDragDrop` -> `PointerDragEnd` -> `PointerDragLeave`
+- For each pointer cancellation: `PointerCancel`
 
 Between frames things are managed by the interaction state machine:
 
-- When a pointer moves over the target: `Over` -> `Enter` -> `Move` -> `Leave` -> `Out`
-- When a pointer presses buttons on the target: `Press` -> `Click` -> `Release`
-- When a pointer drags the target: `DragStart` -> `Drag` -> `DragEnd`
-- When a pointer drags something over the target: `DragEnter` -> `DragOver` -> `DragDrop` -> `DragLeave`
-- When a pointer is canceled: No other events will follow the `Cancel` event for that pointer.
+- When a pointer moves over the target: `PointerOver` -> `PointerEnter` ->
+  `PointerMove` -> `PointerLeave` -> `PointerOut`
+- When a pointer presses buttons on the target: `PointerPress` -> `PointerClick`
+  -> `PointerRelease`
+- When a pointer drags the target: `PointerDragStart` -> `PointerDrag` ->
+  `PointerDragEnd`
+- When a pointer drags something over the target: `PointerDragEnter` ->
+  `PointerDragOver` -> `PointerDragDrop` -> `PointerDragLeave`
+- When a pointer is canceled: No other events will follow the `PointerCancel`
+  event for that pointer.
 
 ## Timers
 
@@ -1601,9 +1670,22 @@ fn increment_score(current_points: usize) -> impl Scene {
 ```
 A `bsn!` expression implements the `Scene` trait and describes a single root
 entity, while a `bsn_list!` (or a scene list inside `Children [...]`) implements
-`SceneList` where each entry becomes its own entity. Enums are special: BSN
-needs a default for every variant, which deriving `VariantDefaults` (or
-`FromTemplate`) generates as `default_{variant_lower}` methods.
+`SceneList` where each entry becomes its own entity.
+
+Any kind of scene reference must be prefixed with `@`: `@my_scene_variable`,
+`@my_scene_function()` or `@{some_scene_expression}`. The `@` tells BSN we mean a
+scene rather than a component; a plain component value or function is written
+without it.
+
+Enums used as components work directly as long as they implement `Default +
+Clone`. BSN does not patch individual variant fields, so every field of the
+variant we use must be specified:
+
+```rust
+bsn! {
+  Foo::A { x: 1, y: 0 }
+}
+```
 
 Two scenes that define the same component are combined, even down to the various
 fields:
@@ -1618,7 +1700,7 @@ fn button() -> impl Scene {
 
 fn my_button() -> impl Scene {
   bsn! {
-      button()
+      @button()
       Node { height: px(100) }
   }
 }
@@ -1626,18 +1708,23 @@ fn my_button() -> impl Scene {
 So `my_button` would create a `Node` with ___both___ a width and height of
 `100px`.
 
-Inside a scene list (`Children [...]`, `bsn_list![...]`), commas separate
-entities. Whitespace separates components on the same entity:
+Inside a scene list (`Children [...]`, `bsn_list![...]`), entities are separated
+by `--`. Whitespace separates components on the same entity. For `bsn_list!`
+prefer the brace form, which `rustfmt` leaves alone:
 
 ```rust
 // One child with A and B
 Children [ A B ]
 
 // Two children, one with A, one with B
-Children [ A, B ]
+Children [ A -- B ]
 
-// Two children, clearer with parentheses
-Children [ (A B), C ]
+// Preferred for bsn_list!
+bsn_list! {
+  A
+  --
+  B
+}
 ```
 
 We can make `SceneComponent` aggregates which must respond to `scene`:
@@ -1658,10 +1745,11 @@ impl Car {
 
     bsn! {
       Transform { translation: Vec3 { x: 10. } }
-      wheels
+      @wheels
       Children [
-        FrontWheel,
-        BackWheel,
+        FrontWheel
+        --
+        BackWheel
       ]
     }
   }
@@ -1708,8 +1796,9 @@ fn spawn_scene(mut commands: Commands) {
   commands.spawn_scene(bsn! {
     Player
     Children [
-      Sword,
-      Shield,
+      Sword
+      --
+      Shield
     ]
   });
 }
@@ -1749,10 +1838,11 @@ This works the same way for lists:
 struct ReportsTo(Entity);
 
 fn employees() -> impl SceneList {
-  bsn_list! [
-      (#Joe ReportsTo(#Jane)),
-      (#Jane ReportsTo(#Joe)),
-  ]
+  bsn_list! {
+      #Joe ReportsTo(#Jane)
+      --
+      #Jane ReportsTo(#Joe)
+  }
 }
 ```
 Entities we make through scenes can be hooked up to observe events
@@ -1761,8 +1851,22 @@ Entities we make through scenes can be hooked up to observe events
 fn button() -> impl Scene {
   bsn! {
       Node { width: px(100), height: px(50) }
-      on(|press: On<Pointer<Press>>| {
+      on(|press: On<PointerPress>| {
           info!("button pressed!")
+      })
+  }
+}
+```
+The `Add` event fires before children exist. `Ready` fires for each entity in a
+scene once the whole scene has been spawned, bottom-up, which makes it the right
+hook for logic that needs the complete hierarchy:
+
+```rust
+fn ready_button() -> impl Scene {
+  bsn! {
+      Node { width: px(100), height: px(50) }
+      on(|ready: On<Ready>| {
+          info!("the full scene is ready!")
       })
   }
 }
